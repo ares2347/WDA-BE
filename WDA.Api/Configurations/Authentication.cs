@@ -1,6 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using WDA.Domain;
 using WDA.Domain.User;
+using WDA.Shared;
 
 namespace WDA.Api.Configurations
 {
@@ -8,11 +12,10 @@ namespace WDA.Api.Configurations
     {
         public static void ConfigurationAuthentication(this IServiceCollection services)
         {
-           services.AddIdentityCore<User>(options => options.SignIn.RequireConfirmedAccount = true)
+            services.AddIdentity<User, Role>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<AppDbContext>();
-           services.AddRazorPages();
 
-           services.Configure<IdentityOptions>(options =>
+            services.Configure<IdentityOptions>(options =>
             {
                 // Password settings.
                 options.Password.RequireDigit = true;
@@ -29,11 +32,38 @@ namespace WDA.Api.Configurations
 
                 // User settings.
                 options.User.AllowedUserNameCharacters =
-                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
                 options.User.RequireUniqueEmail = false;
             });
 
             services.Configure<IdentityOptions>(options => { options.User.RequireUniqueEmail = true; });
+        }
+
+        public static void ConfigureJwtToken(this IServiceCollection services)
+        {
+            var jwtOptions = new JwtBearerOptions
+            {
+                SaveToken = true,
+                TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidIssuer = AppSettings.Instance.Jwt.ValidIssuer,
+                    ValidAudience = AppSettings.Instance.Jwt.ValidAudience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Instance.Jwt.Secret))
+                }
+            };
+            services.AddSingleton(jwtOptions);
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.SaveToken = jwtOptions.SaveToken;
+                    options.TokenValidationParameters = jwtOptions.TokenValidationParameters;
+                });
         }
     }
 }

@@ -1,6 +1,9 @@
-
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using WDA.Api.Configurations;
 using WDA.Domain;
+using WDA.Service.User;
 using WDA.Shared;
 
 namespace WDA.Api
@@ -31,8 +34,16 @@ namespace WDA.Api
             {
                 options.UseSqlServer(appSettings.ConnectionStrings.SqlServer);
             });
+            builder.Services.ConfigurationAuthentication();
+            builder.Services.ConfigureJwtToken();
             builder.Services.AddAuthorization();
-            builder.Services.AddControllers();
+            builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+            builder.Services.AddSingleton<JwtSecurityTokenHandler>();
+            builder.Services.AddControllers()
+                .AddNewtonsoftJson(opt =>
+                {
+                    opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                });
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
