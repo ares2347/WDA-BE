@@ -32,4 +32,8 @@
     <ProjectReference Include="..\WDA.Shared\WDA.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Dto\User\Response\" />
+  </ItemGroup>
+
 </Project>

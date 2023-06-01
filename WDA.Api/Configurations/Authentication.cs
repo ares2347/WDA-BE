@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using WDA.Domain;
-using WDA.Domain.User;
+using WDA.Domain.Models.User;
 using WDA.Shared;
 
 namespace WDA.Api.Configurations
