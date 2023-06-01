@@ -1,13 +1,29 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using WDA.Domain.User;
+using WDA.Domain.Models.Attachment;
+using WDA.Domain.Models.Customer;
+using WDA.Domain.Models.Document;
+using WDA.Domain.Models.Remark;
+using WDA.Domain.Models.Transaction;
+using WDA.Domain.Models.User;
 
 namespace WDA.Domain;
 
-public class AppDbContext : IdentityDbContext<User.User, Role,  Guid>
+public class AppDbContext : IdentityDbContext<User, Role,  Guid>
 {
+    public DbSet<Attachment> Attachments { get; set; }
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<SubCategory> SubCategories { get; set; }
+    public DbSet<Document> Documents { get; set; }
+    public DbSet<Remark> Remarks { get; set; }
+    public DbSet<Transaction> Transactions { get; set; }
+    public DbSet<SubTransaction> SubTransactions { get; set; }
+    public DbSet<Department> Departments { get; set; }
+    public DbSet<Position> Positions { get; set; }
     public AppDbContext(DbContextOptions options) : base(options)
     {
     }
@@ -15,10 +31,19 @@ public class AppDbContext : IdentityDbContext<User.User, Role,  Guid>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        builder.Entity<User.User>()
+
+        builder.Entity<User>()
+            .Property(o => o.EmployeeCode)
+            .HasComputedColumnSql("CONCAT([FirstName],LEFT([LastName],1),FORMAT([Counter],'00000'))");
+
+        builder.Entity<User>()
+            .Property(x => x.Counter)
+            .Metadata
+            .SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+        builder.Entity<User>()
             .Property(x => x.FullName)
             .HasComputedColumnSql("CONCAT([FirstName],SPACE(1),[LastName])");
-        builder.Entity<User.User>()
+        builder.Entity<User>()
             .HasData(BuiltInData.SeedUserData());
         builder.Entity<Role>()
             .HasData(BuiltInData.SeedRoleData());

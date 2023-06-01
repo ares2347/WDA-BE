@@ -11,15 +11,15 @@ namespace WDA.Service.User;
 public class AuthorizationService : IAuthorizationService
 {
     private readonly JwtSecurityTokenHandler _tokenHandler;
-    private readonly UserManager<Domain.User.User> _userManager;
+    private readonly UserManager<Domain.Models.User.User> _userManager;
 
-    public AuthorizationService(JwtSecurityTokenHandler tokenHandler, UserManager<Domain.User.User> userManager)
+    public AuthorizationService(JwtSecurityTokenHandler tokenHandler, UserManager<Domain.Models.User.User> userManager)
     {
         _tokenHandler = tokenHandler;
         _userManager = userManager;
     }
 
-    private async Task<string?> IssueToken(Domain.User.User user, CancellationToken _ = default)
+    private async Task<string?> IssueToken(Domain.Models.User.User user, CancellationToken _ = default)
     {
         var claims = new List<Claim>();
 
@@ -60,7 +60,7 @@ public class AuthorizationService : IAuthorizationService
 
     public async Task<string?> RegisterUser(string? username, string email, string? password, string firstName, string lastName, List<string> roles, CancellationToken _ = default)
     {
-        var user = new Domain.User.User()
+        var user = new Domain.Models.User.User()
         {
             UserName = username ?? email,
             Email = email,

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using WDA.Domain.Enums;
-using WDA.Domain.User;
+using WDA.Domain.Models.User;
 
 namespace WDA.Domain;
 
@@ -13,9 +13,9 @@ public static class BuiltInData
     
 
 
-    public static List<User.User> SeedUserData() => new List<User.User>
+    public static List<User> SeedUserData() => new List<User>
     {
-        new User.User
+        new User
         {
             Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
             UserName = UserIdentifier,

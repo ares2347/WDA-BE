@@ -1,7 +1,6 @@
 using System.Linq.Expressions;
-using WDA.Domain;
 
-namespace WDA.Service.Repositories;
+namespace WDA.Domain.Repositories;
 
 public interface IBaseRepository<T> where T : BaseEntity
 {
