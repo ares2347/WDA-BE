@@ -1,11 +1,9 @@
-using System.Net;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WDA.Api.Dto.User.Request;
 using WDA.Api.Dto.User.Response;
-using WDA.Domain.Models.User;
 using WDA.Shared;
 using IAuthorizationService = WDA.Service.User.IAuthorizationService;
 
