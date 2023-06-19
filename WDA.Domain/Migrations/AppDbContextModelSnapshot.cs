@@ -174,7 +174,7 @@ namespace WDA.Domain.Migrations
 
                     b.HasIndex("ModifiedById");
 
-                    b.ToTable("Attachments");
+                    b.ToTable("Attachments", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.Customer.Customer", b =>
@@ -220,7 +220,7 @@ namespace WDA.Domain.Migrations
 
                     b.HasIndex("ModifiedById");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.Document.Category", b =>
@@ -229,7 +229,7 @@ namespace WDA.Domain.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.Document.Document", b =>
@@ -275,7 +275,7 @@ namespace WDA.Domain.Migrations
 
                     b.HasIndex("ModifiedById");
 
-                    b.ToTable("Documents");
+                    b.ToTable("Documents", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.Document.SubCategory", b =>
@@ -288,7 +288,7 @@ namespace WDA.Domain.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.ToTable("SubCategories");
+                    b.ToTable("SubCategories", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.Remark.Remark", b =>
@@ -336,7 +336,7 @@ namespace WDA.Domain.Migrations
 
                     b.HasIndex("TransactionId");
 
-                    b.ToTable("Remarks");
+                    b.ToTable("Remarks", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.Transaction.SubTransaction", b =>
@@ -378,7 +378,7 @@ namespace WDA.Domain.Migrations
 
                     b.HasIndex("TransactionId");
 
-                    b.ToTable("SubTransactions");
+                    b.ToTable("SubTransactions", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.Transaction.Transaction", b =>
@@ -422,7 +422,7 @@ namespace WDA.Domain.Migrations
 
                     b.HasIndex("ModifiedById");
 
-                    b.ToTable("Transactions");
+                    b.ToTable("Transactions", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.User.Department", b =>
@@ -431,7 +431,7 @@ namespace WDA.Domain.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.ToTable("Departments");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.User.Position", b =>
@@ -449,7 +449,7 @@ namespace WDA.Domain.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Positions");
+                    b.ToTable("Positions", (string)null);
                 });
 
             modelBuilder.Entity("WDA.Domain.Models.User.Role", b =>
