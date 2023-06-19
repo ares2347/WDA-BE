@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using WDA.Domain.Models.User;
 
 namespace WDA.Domain.Repositories;
 

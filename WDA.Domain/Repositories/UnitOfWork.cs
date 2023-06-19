@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Identity;
 using WDA.Domain.Models.Customer;
 using WDA.Domain.Models.Document;
 using WDA.Domain.Models.Transaction;
+using WDA.Domain.Models.User;
+using WDA.Shared;
 
 namespace WDA.Domain.Repositories;
 
@@ -14,6 +12,7 @@ public class UnitOfWork : IUnitOfWork
     public UnitOfWork(AppDbContext dbContext)
     {
         _dbContext = dbContext;
+
     }
 
     private readonly AppDbContext _dbContext;
@@ -58,7 +57,7 @@ public class UnitOfWork : IUnitOfWork
     }
 
 
-    public async Task<bool> SaveChanges()
+    public async Task<bool> SaveChangesAsync()
     {
         return await _dbContext.SaveChangesAsync() > 0;
     }
