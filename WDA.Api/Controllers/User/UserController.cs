@@ -1,8 +1,11 @@
 using System.Net;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WDA.Api.Dto.User.Request;
+using WDA.Api.Dto.User.Response;
+using WDA.Domain.Models.User;
 using WDA.Shared;
 using IAuthorizationService = WDA.Service.User.IAuthorizationService;
 
@@ -13,15 +16,23 @@ namespace WDA.Api.Controllers.User;
 [Authorize]
 public class UserController : ControllerBase
 {
+    private readonly UserContext _userContext;
     private readonly UserManager<Domain.Models.User.User> _userManager;
     private readonly IAuthorizationService _authorizationService;
+    private readonly IMapper _mapper;
 
-    public UserController(UserManager<Domain.Models.User.User> userManager, IAuthorizationService authorizationService)
+    public UserController(
+        UserContext userContext, 
+        UserManager<Domain.Models.User.User> userManager, 
+        IAuthorizationService authorizationService,
+        IMapper mapper)
     {
+        _userContext = userContext;
         _userManager = userManager;
         _authorizationService = authorizationService;
+        _mapper = mapper;
     }
-    
+
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<ActionResult<string?>> Login(LoginRequest request, CancellationToken _)
@@ -46,7 +57,7 @@ public class UserController : ControllerBase
             return Unauthorized(e.Message);
         }
     }
-    
+
     [AllowAnonymous]
     [HttpPost("register")]
     public async Task<ActionResult<string?>> Register(RegisterRequest request, CancellationToken _)
@@ -78,7 +89,7 @@ public class UserController : ControllerBase
         if (string.IsNullOrWhiteSpace(request.OldPassword))
         {
             return ValidationProblem($"Invalid {nameof(request.OldPassword)}");
-        }        
+        }
         if (string.IsNullOrWhiteSpace(request.NewPassword))
         {
             return ValidationProblem($"Invalid {nameof(request.NewPassword)}");
@@ -92,6 +103,21 @@ public class UserController : ControllerBase
         catch (Exception e)
         {
             return BadRequest(e.Message);
+        }
+    }
+
+    [HttpGet("me")]
+    public async Task<ActionResult<UserInfoResponse>> GetUserInfo(CancellationToken _)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(_userContext.UserId.ToString());
+            var res = _mapper.Map<UserInfoResponse>(user);
+            return Ok(res);
+        }
+        catch (Exception e)
+        {
+            return NotFound(e.Message);
         }
     }
 }

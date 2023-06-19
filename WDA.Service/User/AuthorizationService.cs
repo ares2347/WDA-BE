@@ -28,10 +28,6 @@ public class AuthorizationService : IAuthorizationService
         //TODO investigate JWT claims
         claims.Add(new Claim(ClaimTypes.Email, user.Email ?? string.Empty));
         claims.Add(new Claim(ClaimTypes.Sid, user.Id.ToString()));
-        claims.Add(new Claim(ClaimTypes.Name, user.UserName ?? string.Empty));
-        claims.Add(new Claim("FirstName", user.FirstName ?? string.Empty));
-        claims.Add(new Claim("LastName", user.LastName ?? string.Empty));
-        claims.Add(new Claim("FullName", user.FullName ?? string.Empty));
         
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
