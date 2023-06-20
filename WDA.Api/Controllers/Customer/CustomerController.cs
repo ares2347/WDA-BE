@@ -47,7 +47,7 @@ public class CustomerController : ControllerBase
             newCustomer.CreatedBy = user;
             newCustomer.ModifiedBy = user;
             var customer = await _unitOfWork.CustomerRepository.Create(newCustomer, _);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(_);
             var result = _mapper.Map<CustomerResponse>(customer);
             return Ok(result);
         }
@@ -55,6 +55,15 @@ public class CustomerController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<IQueryable<CustomerResponse>>> GetCustomerById([FromRoute] Guid id, CancellationToken _)
+    {
+        var customer = await _unitOfWork.CustomerRepository.GetById(id, _);
+        if (customer is null) return NotFound();
+        var res = _mapper.Map<CustomerResponse>(customer);
+        return Ok(res);
     }
 
     [HttpPut("{id}")]
@@ -67,11 +76,11 @@ public class CustomerController : ControllerBase
 
             var customer = _mapper.Map<Domain.Models.Customer.Customer>(request);
             var user = await _userManager.FindByIdAsync(_userContext.UserId.ToString());
-            customer.CustomerId= id;
+            customer.CustomerId = id;
             customer.ModifiedBy = user;
             customer.ModifiedAt = DateTimeOffset.UtcNow;
             var updatedCustomer = await _unitOfWork.CustomerRepository.Update(customer, _);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(_);
             if (updatedCustomer is null)
                 return NotFound();
             var result = _mapper.Map<CustomerResponse>(updatedCustomer);
@@ -89,7 +98,7 @@ public class CustomerController : ControllerBase
         try
         {
             var res = await _unitOfWork.CustomerRepository.Delete(id, cancellationToken: _);
-            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync(_);
             if (res)
                 return Ok(res);
             return BadRequest(res);
