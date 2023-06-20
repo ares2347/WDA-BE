@@ -28,7 +28,7 @@ namespace WDA.Domain.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<Document?> GetById(Guid id)
+        public Task<Document?> GetById(Guid id, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

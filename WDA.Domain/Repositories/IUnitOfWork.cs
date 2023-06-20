@@ -10,5 +10,5 @@ public interface IUnitOfWork
     IBaseRepository<Transaction> TransactionRepository { get; }
     IBaseRepository<Document> DocumentRepository { get; }
 
-    Task<bool> SaveChangesAsync();
+    Task<bool> SaveChangesAsync(CancellationToken _ = default);
 }

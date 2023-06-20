@@ -65,9 +65,10 @@ public class CustomerRepository : IBaseRepository<Customer>
                 .Where(expression);
     }
 
-    public Task<Customer?> GetById(Guid id)
+    public async Task<Customer?> GetById(Guid id, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var customer = await _dbContext.Customers.FirstOrDefaultAsync(x => x.CustomerId.Equals(id) && !x.IsDelete, cancellationToken);
+        return customer;
     }
 
     public async Task<Customer?> Update(Customer entity, CancellationToken cancellationToken = default)
