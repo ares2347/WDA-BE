@@ -4,6 +4,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using WDA.Domain.Models.User;
 using WDA.Shared;
 
 namespace WDA.Service.User;
@@ -12,11 +13,13 @@ public class AuthorizationService : IAuthorizationService
 {
     private readonly JwtSecurityTokenHandler _tokenHandler;
     private readonly UserManager<Domain.Models.User.User> _userManager;
+    private readonly RoleManager<Role> _roleManager;
 
-    public AuthorizationService(JwtSecurityTokenHandler tokenHandler, UserManager<Domain.Models.User.User> userManager)
+    public AuthorizationService(JwtSecurityTokenHandler tokenHandler, UserManager<Domain.Models.User.User> userManager, RoleManager<Domain.Models.User.Role> roleManager)
     {
         _tokenHandler = tokenHandler;
         _userManager = userManager;
+        _roleManager = roleManager;
     }
 
     private async Task<string?> IssueToken(Domain.Models.User.User user, CancellationToken _ = default)
@@ -28,6 +31,7 @@ public class AuthorizationService : IAuthorizationService
         //TODO investigate JWT claims
         claims.Add(new Claim(ClaimTypes.Email, user.Email ?? string.Empty));
         claims.Add(new Claim(ClaimTypes.Sid, user.Id.ToString()));
+        claims.Add(new Claim(ClaimTypes.Role, roles.ToString() ?? string.Empty));
         
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
@@ -56,6 +60,11 @@ public class AuthorizationService : IAuthorizationService
 
     public async Task<string?> RegisterUser(string? username, string email, string? password, string firstName, string lastName, List<string> roles, CancellationToken _ = default)
     {
+        foreach (var role in roles)
+        {
+            var existedRole = await _roleManager.FindByNameAsync(role);
+            if (existedRole is null) throw new HttpException("Invalid role name", HttpStatusCode.BadRequest);
+        }
         var user = new Domain.Models.User.User()
         {
             UserName = username ?? email,
