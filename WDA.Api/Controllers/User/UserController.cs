@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using WDA.Api.Dto.User.Request;
 using WDA.Api.Dto.User.Response;
+using WDA.Domain.Models.User;
 using WDA.Shared;
 using IAuthorizationService = WDA.Service.User.IAuthorizationService;
 
@@ -20,8 +21,8 @@ public class UserController : ControllerBase
     private readonly IMapper _mapper;
 
     public UserController(
-        UserContext userContext, 
-        UserManager<Domain.Models.User.User> userManager, 
+        UserContext userContext,
+        UserManager<Domain.Models.User.User> userManager,
         IAuthorizationService authorizationService,
         IMapper mapper)
     {
@@ -64,20 +65,24 @@ public class UserController : ControllerBase
         {
             return ValidationProblem($"Invalid {nameof(request.Email)}");
         }
+
         if (string.IsNullOrWhiteSpace(request.Password))
         {
             return ValidationProblem($"Invalid {nameof(request.Password)}");
         }
+
         if (string.IsNullOrEmpty(request.FirstName))
         {
             return ValidationProblem($"Invalid {nameof(request.FirstName)}");
         }
+
         if (string.IsNullOrEmpty(request.LastName))
         {
             return ValidationProblem($"Invalid {nameof(request.LastName)}");
         }
 
-        var res = await _authorizationService.RegisterUser(request.Username, request.Email, request.Password, request.FirstName, request.LastName, request.Roles, _);
+        var res = await _authorizationService.RegisterUser(request.Username, request.Email, request.Password,
+            request.FirstName, request.LastName, request.Roles, _);
         return Ok(res);
     }
 
@@ -88,6 +93,7 @@ public class UserController : ControllerBase
         {
             return ValidationProblem($"Invalid {nameof(request.OldPassword)}");
         }
+
         if (string.IsNullOrWhiteSpace(request.NewPassword))
         {
             return ValidationProblem($"Invalid {nameof(request.NewPassword)}");
@@ -95,7 +101,8 @@ public class UserController : ControllerBase
 
         try
         {
-            var res = await _authorizationService.ChangePassword(request.UserId, request.OldPassword, request.NewPassword, _);
+            var res = await _authorizationService.ChangePassword(request.UserId, request.OldPassword,
+                request.NewPassword, _);
             return Ok(res.Succeeded);
         }
         catch (Exception e)
@@ -110,7 +117,10 @@ public class UserController : ControllerBase
         try
         {
             var user = await _userManager.FindByIdAsync(_userContext.UserId.ToString());
+            if(user is null) return NotFound();
+            var roles = await _userManager.GetRolesAsync(user);
             var res = _mapper.Map<UserInfoResponse>(user);
+            res.Roles = roles.ToList();
             return Ok(res);
         }
         catch (Exception e)

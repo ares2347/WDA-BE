@@ -12,5 +12,6 @@
         public string Department { get; set; } = string.Empty;
         public string Position { get; set; } = string.Empty;
         public bool PasswordChangeRequired { get; set; } = true;
+        public List<string> Roles { get; set; } = new();
     }
 }
