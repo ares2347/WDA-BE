@@ -15,4 +15,5 @@ public class User : IdentityUser<Guid>
     public int Counter { get; set; }
     public bool PasswordChangeRequired { get; set; } = true;
     public bool IsDeleted { get; set; } = false;
+    [NotMapped] public List<string> Roles { get; set; } = new();
 }

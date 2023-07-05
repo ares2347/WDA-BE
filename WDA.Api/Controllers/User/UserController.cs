@@ -81,9 +81,19 @@ public class UserController : ControllerBase
             return ValidationProblem($"Invalid {nameof(request.LastName)}");
         }
 
-        var res = await _authorizationService.RegisterUser(request.Username, request.Email, request.Password,
-            request.FirstName, request.LastName, request.Roles, _);
-        return Ok(res);
+        var user = new Domain.Models.User.User()
+        {
+            UserName = request.Username ?? request.Email,
+            Email = request.Email,
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            // Only force users to change password at first login if the account password is not identified
+            PasswordChangeRequired = request.Password is null,
+        };
+        
+        var res = await _authorizationService.RegisterUser(user, request.Roles, request.Password, _);
+        var token = await _authorizationService.IssueToken(res, _);
+        return Ok(token);
     }
 
     [HttpPost("change-password")]
@@ -118,9 +128,8 @@ public class UserController : ControllerBase
         {
             var user = await _userManager.FindByIdAsync(_userContext.UserId.ToString());
             if(user is null) return NotFound();
-            var roles = await _userManager.GetRolesAsync(user);
+            user.Roles = (await _userManager.GetRolesAsync(user)).ToList();
             var res = _mapper.Map<UserInfoResponse>(user);
-            res.Roles = roles.ToList();
             return Ok(res);
         }
         catch (Exception e)
