@@ -22,7 +22,7 @@ public class AuthorizationService : IAuthorizationService
         _roleManager = roleManager;
     }
 
-    private async Task<string?> IssueToken(Domain.Models.User.User user, CancellationToken _ = default)
+    public async Task<string?> IssueToken(Domain.Models.User.User user, CancellationToken _ = default)
     {
         var claims = new List<Claim>();
 
@@ -58,33 +58,25 @@ public class AuthorizationService : IAuthorizationService
         throw new HttpException("Invalid email or password", HttpStatusCode.Unauthorized);
     }
 
-    public async Task<string?> RegisterUser(string? username, string email, string? password, string firstName, string lastName, List<string> roles, CancellationToken _ = default)
+    public async Task<Domain.Models.User.User?> RegisterUser(Domain.Models.User.User user, List<string> roles, string? password, CancellationToken _ = default)
     {
         foreach (var role in roles)
         {
             var existedRole = await _roleManager.FindByNameAsync(role);
             if (existedRole is null) throw new HttpException("Invalid role name", HttpStatusCode.BadRequest);
         }
-        var user = new Domain.Models.User.User()
-        {
-            UserName = username ?? email,
-            Email = email,
-            FirstName = firstName,
-            LastName = lastName,
-            // Only force users to change password at first login if the account password is not identified
-            PasswordChangeRequired = password is null,
-        };
+        
         
         //TODO refactor default password behavior
-        var result = await _userManager.CreateAsync(user, password ?? "password");
+        var result = password is null ? await _userManager.CreateAsync(user) : await _userManager.CreateAsync(user, password);
 
         if (!result.Succeeded)
         {
             throw new HttpException("User registration failed!", HttpStatusCode.BadRequest);
         }
         await _userManager.AddToRolesAsync(user, roles);
-        var authUser = await _userManager.FindByNameAsync(username ?? string.Empty) ?? await _userManager.FindByEmailAsync(email);
-        return await IssueToken(user, _);
+        var authUser = await _userManager.FindByNameAsync(user.UserName ?? string.Empty) ?? await _userManager.FindByEmailAsync(user.Email ?? string.Empty);
+        return authUser;
     }
     
     public async Task<IdentityResult> ChangePassword(Guid userId, string oldPassword, string newPassword, CancellationToken _ = default)
