@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
 using WDA.Domain.Models.Document;
 using WDA.Domain.Models.Transaction;
@@ -16,9 +17,10 @@ public class UnitOfWork : IUnitOfWork
     }
 
     private readonly AppDbContext _dbContext;
-    private IBaseRepository<Customer> _customerRepository;
-    private IBaseRepository<Transaction> _transactionRepository;
-    private IBaseRepository<Document> _documentRepository;
+    private IBaseRepository<Customer>? _customerRepository;
+    private IBaseRepository<Transaction>? _transactionRepository;
+    private IBaseRepository<Document>? _documentRepository;
+    private IBaseRepository<Attachment>? _attachmentRepository;
 
     public IBaseRepository<Customer> CustomerRepository
     {
@@ -53,6 +55,17 @@ public class UnitOfWork : IUnitOfWork
                 _documentRepository = new DocumentRepository(_dbContext);
             }
             return _documentRepository;
+        }
+    }    
+    public IBaseRepository<Attachment> AttachmentRepository
+    {
+        get
+        {
+            if (_attachmentRepository is null)
+            {
+                _attachmentRepository = new AttachmentRepository(_dbContext);
+            }
+            return _attachmentRepository;
         }
     }
 

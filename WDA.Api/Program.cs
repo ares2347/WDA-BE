@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using WDA.Api.Configurations;
 using WDA.Domain;
 using WDA.Domain.Repositories;
+using WDA.Service.Attachment;
 using WDA.Service.User;
 using WDA.Shared;
 
@@ -42,6 +43,7 @@ namespace WDA.Api
 
             builder.Services.AddAutoMapper(typeof(AutoMapperProfile).Assembly);
             builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+            builder.Services.AddScoped<IAttachmentService, AttachmentService>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<UserContext>(x =>
                 UserContext.Build(x.GetRequiredService<IHttpContextAccessor>()?.HttpContext?.User));
