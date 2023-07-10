@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using WDA.Api.Dto.Attachment;
 using WDA.Api.Dto.Customer.Request;
 using WDA.Api.Dto.Customer.Response;
 using WDA.Api.Dto.Document.Request;
@@ -6,6 +7,7 @@ using WDA.Api.Dto.Document.Response;
 using WDA.Api.Dto.Transaction.Request;
 using WDA.Api.Dto.Transaction.Response;
 using WDA.Api.Dto.User.Response;
+using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
 using WDA.Domain.Models.Document;
 using WDA.Domain.Models.Remark;
@@ -49,8 +51,16 @@ public class AutoMapperProfile : Profile
             .ForMember(x => x.CreatedById, opt => opt.MapFrom(src => src.CreatedBy.Id))
             .ForMember(x => x.CreatedByName, opt => opt.MapFrom(src => src.CreatedBy.FullName))
             .ForMember(x => x.ModifiedById, opt => opt.MapFrom(src => src.ModifiedBy.Id))
-            .ForMember(x => x.ModifiedByName, opt => opt.MapFrom(src => src.ModifiedBy.FullName)); ;
-        CreateMap<CreateDocumentRequest, Document>();
-        CreateMap<UpdateDocumentRequest, Document>();
+            .ForMember(x => x.ModifiedByName, opt => opt.MapFrom(src => src.ModifiedBy.FullName));
+        CreateMap<CreateDocumentRequest, Document>()
+            .ForMember(x => x.Attachments, opt => opt.Ignore());
+        CreateMap<UpdateDocumentRequest, Document>()
+            .ForMember(x => x.Attachments, opt => opt.Ignore());
+        
+        CreateMap<Attachment, AttachmentResponse>()
+            .ForMember(x => x.CreatedById, opt => opt.MapFrom(src => src.CreatedBy.Id))
+            .ForMember(x => x.CreatedByName, opt => opt.MapFrom(src => src.CreatedBy.FullName))
+            .ForMember(x => x.ModifiedById, opt => opt.MapFrom(src => src.ModifiedBy.Id))
+            .ForMember(x => x.ModifiedByName, opt => opt.MapFrom(src => src.ModifiedBy.FullName));
     }
 }

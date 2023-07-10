@@ -6,4 +6,5 @@ public class UpdateDocumentRequest
     public string Category { get; set; } = string.Empty;
     public string SubCategory { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public List<Guid>? AttachmentIds { get; set; }
 }

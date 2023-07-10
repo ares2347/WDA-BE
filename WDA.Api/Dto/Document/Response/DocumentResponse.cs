@@ -1,3 +1,6 @@
+using WDA.Api.Dto.Attachment;
+using WDA.Domain.Models.Attachment;
+
 namespace WDA.Api.Dto.Document.Response;
 
 public class DocumentResponse
@@ -7,6 +10,7 @@ public class DocumentResponse
     public string Category { get; set; } = string.Empty;
     public string SubCategory { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public List<AttachmentResponse> Attachments = new();
     public DateTimeOffset? ModifiedAt { get; set; } = DateTimeOffset.UtcNow;
     public Guid? ModifiedById { get; set; }
     public string? ModifiedByName { get; set; }

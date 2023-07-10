@@ -11,4 +11,8 @@
     <ProjectReference Include="..\WDA.Shared\WDA.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.16.0" />
+  </ItemGroup>
+
 </Project>
