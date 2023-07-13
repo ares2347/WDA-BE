@@ -144,13 +144,13 @@ public class DocumentController : ControllerBase
 
         var attachment = new Attachment
         {
-            AttachmentId = attachmentId,
+            AttachmentId = attachmentId, 
             Path = filePath,
             Name = file.FileName,
             Size = file.Length,
             ContentType = file.ContentType,
             CreatedBy = user,
-            CreatedAt = DateTimeOffset.Now,
+            CreatedAt = DateTimeOffset.Now, 
             ModifiedBy = user,
             ModifiedAt = DateTimeOffset.Now
         };
@@ -160,14 +160,14 @@ public class DocumentController : ControllerBase
         return _mapper.Map<AttachmentResponse>(res);
     }
 
-    // [HttpGet("File/{attachmentId:guid}")]
-    // public async Task<FileStreamResult> PreviewAttachment([FromRoute] Guid attachmentId, CancellationToken _)
-    // {
-    //     var attachment = await _unitOfWork.AttachmentRepository.GetById(attachmentId, _);
-    //     HttpException.ThrowIfNull(attachment);
-    //     var contentType = attachment!.ContentType;
-    //     Stream content = _attachmentService.BrowseFile(attachment.Path);
-    //
-    //     return File(content, contentType, attachment.Name);
-    // }
+    [HttpGet("File/{attachmentId:guid}")]
+    public async Task<FileStreamResult> PreviewAttachment([FromRoute] Guid attachmentId, CancellationToken _)
+    {
+        var attachment = await _unitOfWork.AttachmentRepository.GetById(attachmentId, _);
+        HttpException.ThrowIfNull(attachment);  
+        var contentType = attachment!.ContentType;
+        var  content = await _attachmentService.BrowseFile(attachment.Path);
+    
+        return File(content, contentType, attachment.Name);
+    }
 }

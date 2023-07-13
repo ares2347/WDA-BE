@@ -9,7 +9,7 @@ namespace WDA.Api.Dto.Transaction.Response
     {
         public Guid TransactionId { get; set; }
         public decimal Total { get; set; }
-        public DateOnly Date { get; set; }
+        public string Date { get; set; } = string.Empty;
         public List<SubTransactionDto> SubTransactions { get; set; } = new();
         public List<RemarksDto> Remarks { get; set; } = new();
         public CustomerResponse Customer { get; set; } = new();
