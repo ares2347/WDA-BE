@@ -2,25 +2,31 @@
 using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
 using WDA.Domain.Models.Document;
+using WDA.Domain.Models.Thread;
 using WDA.Domain.Models.Transaction;
 using WDA.Domain.Models.User;
 using WDA.Shared;
+using Thread = WDA.Domain.Models.Thread.Thread;
 
 namespace WDA.Domain.Repositories;
 
 public class UnitOfWork : IUnitOfWork
 {
-    public UnitOfWork(AppDbContext dbContext)
+    public UnitOfWork(AppDbContext dbContext, UserManager<User> userManager)
     {
         _dbContext = dbContext;
-
+        _userManager = userManager;
     }
 
     private readonly AppDbContext _dbContext;
+    private readonly UserManager<User> _userManager;
     private IBaseRepository<Customer>? _customerRepository;
     private IBaseRepository<Transaction>? _transactionRepository;
     private IBaseRepository<Document>? _documentRepository;
     private IBaseRepository<Attachment>? _attachmentRepository;
+    private IBaseRepository<Thread>? _threadRepository;
+    private IBaseRepository<Reply>? _replyRepository;
+    private AdminRepository _adminRepository;
 
     public IBaseRepository<Customer> CustomerRepository
     {
@@ -69,6 +75,40 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
+    public IBaseRepository<Thread> ThreadRepository
+    {
+        get
+        {
+            if (_threadRepository is null)
+            {
+                _threadRepository = new ThreadRepository(_dbContext);
+            }
+            return _threadRepository;
+        }
+    }    
+    public IBaseRepository<Reply> ReplyRepository
+    {
+        get
+        {
+            if (_replyRepository is null)
+            {
+                _replyRepository = new ReplyRepository(_dbContext);
+            }
+            return _replyRepository;
+        }
+    }
+
+    public AdminRepository AdminRepository
+    {
+        get
+        {
+            if (_adminRepository is null)
+            {
+                _adminRepository = new AdminRepository(_dbContext, _userManager);
+            }
+            return _adminRepository;
+        }
+    }
 
     public async Task<bool> SaveChangesAsync(CancellationToken _ = default)
     {

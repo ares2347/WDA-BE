@@ -31,8 +31,6 @@ public class AuthorizationService : IAuthorizationService
         //TODO investigate JWT claims
         claims.Add(new Claim(ClaimTypes.Email, user.Email ?? string.Empty));
         claims.Add(new Claim(ClaimTypes.Sid, user.Id.ToString()));
-        claims.Add(new Claim(ClaimTypes.Role, roles.ToString() ?? string.Empty));
-        
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
 
         var signingKeys = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Instance.Jwt.Secret));

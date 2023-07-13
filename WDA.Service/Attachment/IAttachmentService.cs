@@ -3,7 +3,7 @@ namespace WDA.Service.Attachment;
 public interface IAttachmentService
 {
     Task<string> SaveFileAsync(Stream file, string fileName);
-    FileStream BrowseFile(string path);
+    Task<Stream> BrowseFile(string fileName);
     Task<MemoryStream> GetFileMemoryStream(string path);
     void RemoveFile(string path);
 }

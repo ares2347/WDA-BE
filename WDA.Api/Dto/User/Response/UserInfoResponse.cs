@@ -1,4 +1,6 @@
-﻿namespace WDA.Api.Dto.User.Response
+﻿using WDA.Api.Dto.Attachment;
+
+namespace WDA.Api.Dto.User.Response
 {
     public class UserInfoResponse
     {
@@ -12,6 +14,7 @@
         public string Department { get; set; } = string.Empty;
         public string Position { get; set; } = string.Empty;
         public bool PasswordChangeRequired { get; set; } = true;
+        public Guid? ProfilePictureId { get; set; }
         public List<string> Roles { get; set; } = new();
     }
 }

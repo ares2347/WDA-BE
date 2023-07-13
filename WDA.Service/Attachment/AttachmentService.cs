@@ -23,10 +23,21 @@ public class AttachmentService : IAttachmentService
         }
     }
 
-    public FileStream BrowseFile(string path)
+    public async Task<Stream> BrowseFile(string fileName)
     {
-        HttpException.ThrowIfNull(path);
-        return File.OpenRead(path);
+        try
+        {
+            var container = new BlobContainerClient(AppSettings.Instance.AzureStorage.ConnectionString,
+                "attachments");
+            var blob = container.GetBlobClient(fileName);
+            var stream = new MemoryStream();
+            await blob.DownloadToAsync(stream);
+            return stream;
+        }
+        catch (Exception e)
+        {
+            throw new HttpException("Get file failed.", HttpStatusCode.BadRequest);
+        }
     }
 
     public async Task<MemoryStream> GetFileMemoryStream(string path)
