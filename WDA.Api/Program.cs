@@ -37,6 +37,9 @@ namespace WDA.Api
             {
                 options.UseSqlServer(appSettings.ConnectionStrings.SqlServer);
             });
+            builder.Services
+                .AddControllers(options => options.UseDateOnlyTimeOnlyStringConverters())
+                .AddJsonOptions(options => options.UseDateOnlyTimeOnlyStringConverters());
             builder.Services.ConfigurationAuthentication();
             builder.Services.ConfigureJwtToken();
             builder.Services.AddAuthorization();
@@ -58,6 +61,7 @@ namespace WDA.Api
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
+                c.UseDateOnlyTimeOnlyStringConverters();
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Title = "JWTToken_Auth_API",
