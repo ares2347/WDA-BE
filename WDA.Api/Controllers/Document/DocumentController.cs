@@ -160,13 +160,14 @@ public class DocumentController : ControllerBase
         return _mapper.Map<AttachmentResponse>(res);
     }
 
+    [AllowAnonymous]
     [HttpGet("File/{attachmentId:guid}")]
     public async Task<FileStreamResult> PreviewAttachment([FromRoute] Guid attachmentId, CancellationToken _)
     {
         var attachment = await _unitOfWork.AttachmentRepository.GetById(attachmentId, _);
         HttpException.ThrowIfNull(attachment);  
         var contentType = attachment!.ContentType;
-        var  content = await _attachmentService.BrowseFile(attachment.Path);
+        var  content = await _attachmentService.BrowseFile(attachment.AttachmentId.ToString());
     
         return File(content, contentType, attachment.Name);
     }

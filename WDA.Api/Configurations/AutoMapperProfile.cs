@@ -4,6 +4,7 @@ using WDA.Api.Dto.Customer.Request;
 using WDA.Api.Dto.Customer.Response;
 using WDA.Api.Dto.Document.Request;
 using WDA.Api.Dto.Document.Response;
+using WDA.Api.Dto.Feedback;
 using WDA.Api.Dto.Forum;
 using WDA.Api.Dto.Transaction.Request;
 using WDA.Api.Dto.Transaction.Response;
@@ -11,6 +12,7 @@ using WDA.Api.Dto.User.Response;
 using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
 using WDA.Domain.Models.Document;
+using WDA.Domain.Models.Feedback;
 using WDA.Domain.Models.Remark;
 using WDA.Domain.Models.Thread;
 using WDA.Domain.Models.Transaction;
@@ -78,5 +80,13 @@ public class AutoMapperProfile : Profile
             .ForMember(x => x.ModifiedByName, opt => opt.MapFrom(src => src.ModifiedBy.FullName));
         CreateMap<CreateReplyRequest, Reply>();
         CreateMap<CreateThreadRequest, Thread>();
+
+        CreateMap<Feedback, FeedbackResponse>()
+            .ForMember(x => x.CreatedById, opt => opt.MapFrom(src => src.CreatedBy.Id))
+            .ForMember(x => x.CreatedByName, opt => opt.MapFrom(src => src.CreatedBy.FullName))
+            .ForMember(x => x.ModifiedById, opt => opt.MapFrom(src => src.ModifiedBy.Id))
+            .ForMember(x => x.ModifiedByName, opt => opt.MapFrom(src => src.ModifiedBy.FullName));
+        CreateMap<CreateFeedbackRequest, Feedback>()
+            .ForMember(x => x.Customer, opt => opt.Ignore());
     }
 }

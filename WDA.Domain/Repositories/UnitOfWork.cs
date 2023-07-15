@@ -2,6 +2,7 @@
 using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
 using WDA.Domain.Models.Document;
+using WDA.Domain.Models.Feedback;
 using WDA.Domain.Models.Thread;
 using WDA.Domain.Models.Transaction;
 using WDA.Domain.Models.User;
@@ -26,6 +27,7 @@ public class UnitOfWork : IUnitOfWork
     private IBaseRepository<Attachment>? _attachmentRepository;
     private IBaseRepository<Thread>? _threadRepository;
     private IBaseRepository<Reply>? _replyRepository;
+    private IBaseRepository<Feedback>? _feedbackRepository;
     private AdminRepository _adminRepository;
 
     public IBaseRepository<Customer> CustomerRepository
@@ -95,6 +97,17 @@ public class UnitOfWork : IUnitOfWork
                 _replyRepository = new ReplyRepository(_dbContext);
             }
             return _replyRepository;
+        }
+    }
+    public IBaseRepository<Feedback> FeedbackRepository
+    {
+        get
+        {
+            if (_feedbackRepository is null)
+            {
+                _feedbackRepository = new FeedbackRepository(_dbContext);
+            }
+            return _feedbackRepository;
         }
     }
 

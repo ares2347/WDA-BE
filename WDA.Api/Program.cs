@@ -107,7 +107,7 @@ namespace WDA.Api
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            app.UseStaticFiles();
             app.MapControllers();
             //config get file name in header
             app.Use(async (context, next) =>

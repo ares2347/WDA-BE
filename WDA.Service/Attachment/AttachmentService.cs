@@ -13,6 +13,7 @@ public class AttachmentService : IAttachmentService
         try
         {
             var blob = container.GetBlobClient(fileName);
+            file.Position = 0;
             await blob.UploadAsync(file);
             var fileUrl = blob.Uri.AbsoluteUri;
             return fileUrl;
@@ -30,9 +31,8 @@ public class AttachmentService : IAttachmentService
             var container = new BlobContainerClient(AppSettings.Instance.AzureStorage.ConnectionString,
                 "attachments");
             var blob = container.GetBlobClient(fileName);
-            var stream = new MemoryStream();
-            await blob.DownloadToAsync(stream);
-            return stream;
+            var res = await blob.DownloadContentAsync();
+            return res.Value.Content.ToStream();
         }
         catch (Exception e)
         {

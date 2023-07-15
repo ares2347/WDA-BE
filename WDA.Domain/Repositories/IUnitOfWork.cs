@@ -1,6 +1,7 @@
 ﻿using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
 using WDA.Domain.Models.Document;
+using WDA.Domain.Models.Feedback;
 using WDA.Domain.Models.Thread;
 using WDA.Domain.Models.Transaction;
 using Thread = WDA.Domain.Models.Thread.Thread;
@@ -15,6 +16,7 @@ public interface IUnitOfWork
     IBaseRepository<Attachment> AttachmentRepository { get; }
     IBaseRepository<Thread> ThreadRepository { get; }
     IBaseRepository<Reply> ReplyRepository { get; }
+    IBaseRepository<Feedback> FeedbackRepository { get; }
     AdminRepository AdminRepository { get; }
 
     Task<bool> SaveChangesAsync(CancellationToken _ = default);
