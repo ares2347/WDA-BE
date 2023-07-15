@@ -33,11 +33,18 @@ public class EmployeeController : ControllerBase
     public async Task<ActionResult<IEnumerable<UserInfoResponse>>> GetEmployees(CancellationToken _)
     {
         var employees = await _userManager.GetUsersInRoleAsync(RoleName.Employee);
+        var managers = await _userManager.GetUsersInRoleAsync(RoleName.Manager);
         foreach (var employee in employees)
         {
             employee.Roles = (await _userManager.GetRolesAsync(employee)).ToList();
+        }        
+        foreach (var manager in managers)
+        {
+            manager.Roles = (await _userManager.GetRolesAsync(manager)).ToList();
         }
-        var response = employees.Select( employee => _mapper.Map<UserInfoResponse>(employee)).AsEnumerable();
+        var employeeResponse = employees.Select( employee => _mapper.Map<UserInfoResponse>(employee)).AsEnumerable();
+        var managerResponse = managers.Select( manager => _mapper.Map<UserInfoResponse>(manager)).AsEnumerable();
+        var response = employeeResponse.Concat(managerResponse);
         return Ok(response);
     }
 
