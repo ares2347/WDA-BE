@@ -20,7 +20,8 @@ public class CustomerController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public CustomerController(UserContext userContext, UserManager<Domain.Models.User.User> userManager, IUnitOfWork unitOfWork, IMapper mapper)
+    public CustomerController(UserContext userContext, UserManager<Domain.Models.User.User> userManager,
+        IUnitOfWork unitOfWork, IMapper mapper)
     {
         _userContext = userContext;
         _userManager = userManager;
@@ -29,14 +30,20 @@ public class CustomerController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IQueryable<CustomerResponse>> GetCustomers(string? name, int page, int size, CancellationToken _)
+    public ActionResult<IQueryable<CustomerResponse>> GetCustomers(string? search, int page, int size,
+        CancellationToken _)
     {
-        var customers = _unitOfWork.CustomerRepository.Get(x=> x.Name.Contains(name ?? string.Empty), size, page).Select(x => _mapper.Map<CustomerResponse>(x));
+        var customers = _unitOfWork.CustomerRepository
+            .Get(
+                x => x.Name.Contains(search ?? string.Empty) || x.Email.Contains(search ?? string.Empty) ||
+                     x.Telephone.Contains(search ?? string.Empty), size, page)
+            .Select(x => _mapper.Map<CustomerResponse>(x));
         return Ok(customers);
     }
 
     [HttpPost]
-    public async Task<ActionResult<CustomerResponse?>> CreateCustomer(CreateCustomerRequest request, CancellationToken _)
+    public async Task<ActionResult<CustomerResponse?>> CreateCustomer(CreateCustomerRequest request,
+        CancellationToken _)
     {
         try
         {
@@ -58,7 +65,8 @@ public class CustomerController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<IQueryable<CustomerResponse>>> GetCustomerById([FromRoute] Guid id, CancellationToken _)
+    public async Task<ActionResult<IQueryable<CustomerResponse>>> GetCustomerById([FromRoute] Guid id,
+        CancellationToken _)
     {
         var customer = await _unitOfWork.CustomerRepository.GetById(id, _);
         if (customer is null) return NotFound();
@@ -67,7 +75,8 @@ public class CustomerController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<CustomerResponse?>> UpdateCustomer([FromRoute] Guid id, UpdateCustomerRequest request, CancellationToken _)
+    public async Task<ActionResult<CustomerResponse?>> UpdateCustomer([FromRoute] Guid id,
+        UpdateCustomerRequest request, CancellationToken _)
     {
         try
         {
