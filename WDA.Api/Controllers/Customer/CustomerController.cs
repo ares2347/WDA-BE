@@ -29,9 +29,9 @@ public class CustomerController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IQueryable<CustomerResponse>> GetCustomers(CancellationToken _)
+    public ActionResult<IQueryable<CustomerResponse>> GetCustomers(string? name, int page, int size, CancellationToken _)
     {
-        var customers = _unitOfWork.CustomerRepository.Get().Select(x => _mapper.Map<CustomerResponse>(x));
+        var customers = _unitOfWork.CustomerRepository.Get(x=> x.Name.Contains(name ?? string.Empty), size, page).Select(x => _mapper.Map<CustomerResponse>(x));
         return Ok(customers);
     }
 

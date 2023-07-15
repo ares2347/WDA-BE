@@ -1,7 +1,9 @@
-﻿using AutoMapper;
+﻿using System.Net;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WDA.Api.Dto.Customer.Request;
 using WDA.Api.Dto.Customer.Response;
 using WDA.Api.Dto.Transaction.Request;
@@ -21,7 +23,8 @@ public class TransactionController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public TransactionController(UserContext userContext, UserManager<Domain.Models.User.User> userManager, IUnitOfWork unitOfWork, IMapper mapper)
+    public TransactionController(UserContext userContext, UserManager<Domain.Models.User.User> userManager,
+        IUnitOfWork unitOfWork, IMapper mapper)
     {
         _userContext = userContext;
         _userManager = userManager;
@@ -32,18 +35,22 @@ public class TransactionController : ControllerBase
     [HttpGet]
     public ActionResult<IQueryable<TransactionResponse>> GetTransactions(CancellationToken _)
     {
-        var customers = _unitOfWork.TransactionRepository.Get().Select(x => _mapper.Map<TransactionResponse>(x));
+        var customers = _unitOfWork.TransactionRepository.Get(x => !x.IsDelete).Include(x => x.Customer)
+            .Select(x => _mapper.Map<TransactionResponse>(x));
         return Ok(customers);
     }
 
     [HttpPost]
-    public async Task<ActionResult<TransactionResponse?>> CreateTransaction(CreateTransactionRequest request, CancellationToken _)
+    public async Task<ActionResult<TransactionResponse?>> CreateTransaction(CreateTransactionRequest request,
+        CancellationToken _)
     {
         try
         {
             var transaction = _mapper.Map<Domain.Models.Transaction.Transaction>(request);
             var user = await _userManager.FindByIdAsync(_userContext.UserId.ToString());
             var customer = await _unitOfWork.CustomerRepository.GetById(request.CustomerId, _);
+            if (customer is null)
+                throw new HttpException("Transaction Created Failed. Customer Not Found", HttpStatusCode.BadRequest);
             transaction.Total = transaction.SubTransactions.Sum(sub => sub.SubTotal);
             transaction.CreatedBy = user;
             transaction.ModifiedBy = user;
@@ -60,12 +67,23 @@ public class TransactionController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<IQueryable<TransactionResponse>>> GetTransactionById([FromRoute] Guid id, CancellationToken _)
+    public async Task<ActionResult<IQueryable<TransactionResponse>>> GetTransactionById([FromRoute] Guid id,
+        CancellationToken _)
     {
         var transaction = await _unitOfWork.TransactionRepository.GetById(id, _);
         if (transaction is null) return NotFound();
         var res = _mapper.Map<TransactionResponse>(transaction);
         return Ok(res);
+    }
+
+    [HttpGet("Customer/{customerId:guid}")]
+    public ActionResult<IQueryable<TransactionResponse>> GetTransactionsByCustomerId([FromRoute] Guid customerId,
+        CancellationToken _)
+    {
+        var transactions = _unitOfWork.TransactionRepository
+            .Get(x => !x.IsDelete && x.Customer.CustomerId == customerId).Include(x => x.Customer)
+            .Select(x => _mapper.Map<TransactionResponse>(x));
+        return Ok(transactions);
     }
 
     [HttpDelete("{id}")]

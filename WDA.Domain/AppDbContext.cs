@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
 using WDA.Domain.Models.Document;
+using WDA.Domain.Models.Feedback;
 using WDA.Domain.Models.Remark;
 using WDA.Domain.Models.Thread;
 using WDA.Domain.Models.Transaction;
@@ -28,6 +29,7 @@ public class AppDbContext : IdentityDbContext<User, Role,  Guid>
     public DbSet<Position> Positions { get; set; }
     public DbSet<Thread> Threads { get; set; }
     public DbSet<Reply> Replies { get; set; }
+    public DbSet<Feedback> Feedbacks { get; set; }
     public AppDbContext(DbContextOptions options) : base(options)
     {
     }
