@@ -49,6 +49,9 @@ namespace WDA.Api.Configurations
                     ValidIssuer = AppSettings.Instance.Jwt.ValidIssuer,
                     ValidAudience = AppSettings.Instance.Jwt.ValidAudience,
                     ValidateIssuerSigningKey = true,
+                    ValidateLifetime = true,
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Instance.Jwt.Secret))
                 }
             };

@@ -1,17 +1,15 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Newtonsoft.Json;
 using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
-using WDA.Domain.Models.Document;
-using WDA.Domain.Models.Feedback;
-using WDA.Domain.Models.Remark;
-using WDA.Domain.Models.Thread;
+using WDA.Domain.Models.Email;
+using WDA.Domain.Models.Ticket;
 using WDA.Domain.Models.Transaction;
 using WDA.Domain.Models.User;
-using Thread = WDA.Domain.Models.Thread.Thread;
 
 namespace WDA.Domain;
 
@@ -19,17 +17,12 @@ public class AppDbContext : IdentityDbContext<User, Role,  Guid>
 {
     public DbSet<Attachment> Attachments { get; set; }
     public DbSet<Customer> Customers { get; set; }
-    public DbSet<Category> Categories { get; set; }
-    public DbSet<SubCategory> SubCategories { get; set; }
-    public DbSet<Document> Documents { get; set; }
-    public DbSet<Remark> Remarks { get; set; }
     public DbSet<Transaction> Transactions { get; set; }
-    public DbSet<SubTransaction> SubTransactions { get; set; }
+    public DbSet<CustomerTicket> CustomerTickets { get; set; }
+    public DbSet<EmployeeTicket> EmployeeTickets { get; set; }
     public DbSet<Department> Departments { get; set; }
-    public DbSet<Position> Positions { get; set; }
-    public DbSet<Thread> Threads { get; set; }
-    public DbSet<Reply> Replies { get; set; }
-    public DbSet<Feedback> Feedbacks { get; set; }
+    public DbSet<EmailTemplate> EmailTemplates { get; set; }
+
     public AppDbContext(DbContextOptions options) : base(options)
     {
     }
@@ -37,24 +30,42 @@ public class AppDbContext : IdentityDbContext<User, Role,  Guid>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-
-        builder.Entity<User>()
-            .Property(o => o.EmployeeCode)
-            .HasComputedColumnSql("CONCAT([FirstName],LEFT([LastName],1),FORMAT([Counter],'00000'))");
-
-        builder.Entity<User>()
-            .Property(x => x.Counter)
-            .Metadata
-            .SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
-        builder.Entity<User>()
-            .Property(x => x.FullName)
-            .HasComputedColumnSql("CONCAT([FirstName],SPACE(1),[LastName])");
         builder.Entity<User>()
             .HasData(BuiltInData.SeedUserData());
         builder.Entity<Role>()
             .HasData(BuiltInData.SeedRoleData());
         builder.Entity<IdentityUserRole<Guid>>()
             .HasData(BuiltInData.SeedUserRoles());
+        
+        builder.Entity<CustomerTicket>()
+            .HasOne(e => e.Requestor)
+            .WithMany()
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.Entity<CustomerTicket>()
+            .HasOne(e => e.Resolver)
+            .WithMany()
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.Entity<CustomerTicket>()
+            .Property(e => e.ReopenReasons)
+            .HasConversion(new ValueConverter<List<string>, string>(
+                v => JsonConvert.SerializeObject(v),
+                v => JsonConvert.DeserializeObject<List<string>>(v) ?? new()));
+        
+        builder.Entity<EmployeeTicket>()
+            .HasOne(e => e.Requestor)
+            .WithMany()
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.Entity<EmployeeTicket>()
+            .HasOne(e => e.Resolver)
+            .WithMany()
+            .OnDelete(DeleteBehavior.NoAction);
+        builder.Entity<EmployeeTicket>()
+            .Property(e => e.ReopenReasons)
+            .HasConversion(new ValueConverter<List<string>, string>(
+                v => JsonConvert.SerializeObject(v),
+                v => JsonConvert.DeserializeObject<List<string>>(v) ?? new()));
+        
+        builder.Entity<EmailTemplate>().HasData(BuiltInData.SeedEmailTemplates());
     }
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)

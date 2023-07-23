@@ -41,8 +41,8 @@ public class AdminRepository
         var pastCustomers = await _dbContext.Transactions
             .Where(x => x.CreatedAt.Value.AddMonths(1).Month == DateTimeOffset.UtcNow.Month).Select(x => x.Customer).Distinct()
             .CountAsync(_);
-        var totalManager = await _userManager.GetUsersInRoleAsync(RoleName.Manager);
-        var totalEmployee = await _userManager.GetUsersInRoleAsync(RoleName.Employee);
+        var totalManager = await _userManager.GetUsersInRoleAsync(RoleName.HrManager);
+        var totalEmployee = await _userManager.GetUsersInRoleAsync(RoleName.SaleManager);
         
         var monthlyTransactions = await _dbContext.Transactions
             .Where(x => x.CreatedAt.Value.Year == DateTimeOffset.UtcNow.Year)

@@ -32,8 +32,8 @@ public class EmployeeController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserInfoResponse>>> GetEmployees(CancellationToken _)
     {
-        var employees = await _userManager.GetUsersInRoleAsync(RoleName.Employee);
-        var managers = await _userManager.GetUsersInRoleAsync(RoleName.Manager);
+        var employees = await _userManager.GetUsersInRoleAsync(RoleName.Hr);
+        var managers = await _userManager.GetUsersInRoleAsync(RoleName.Sale);
         foreach (var employee in employees)
         {
             employee.Roles = (await _userManager.GetRolesAsync(employee)).ToList();
@@ -56,14 +56,9 @@ public class EmployeeController : ControllerBase
             return ValidationProblem($"Invalid {nameof(request.Email)}");
         }
 
-        if (string.IsNullOrEmpty(request.FirstName))
+        if (string.IsNullOrEmpty(request.FullName))
         {
-            return ValidationProblem($"Invalid {nameof(request.FirstName)}");
-        }
-
-        if (string.IsNullOrEmpty(request.LastName))
-        {
-            return ValidationProblem($"Invalid {nameof(request.LastName)}");
+            return ValidationProblem($"Invalid {nameof(request.FullName)}");
         }
 
         if (string.IsNullOrEmpty(request.Department))
@@ -81,16 +76,13 @@ public class EmployeeController : ControllerBase
             UserName = request.Email,
             Email = request.Email,
             PhoneNumber = request.Phone,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
             Department = request.Department,
-            Position = request.Position,
-            FullName = string.Concat(request.FirstName, request.LastName),
+            FullName = request.FullName,
             // Only force users to change password at first login if the account password is not identified
             PasswordChangeRequired = true
         };
 
-        var user =  await _authorizationService.RegisterUser(employee, new List<string> { RoleName.Employee }, null, _);
+        var user =  await _authorizationService.RegisterUser(employee, new List<string> { RoleName.Hr }, null, _);
         var res = _mapper.Map<UserInfoResponse>(user);
         return Ok(res);
     }

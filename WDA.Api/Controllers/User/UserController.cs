@@ -11,6 +11,7 @@ using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.User;
 using WDA.Domain.Repositories;
 using WDA.Service.Attachment;
+using WDA.Service.User;
 using WDA.Shared;
 using IAuthorizationService = WDA.Service.User.IAuthorizationService;
 
@@ -46,7 +47,7 @@ public class UserController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("login")]
-    public async Task<ActionResult<string?>> Login(LoginRequest request, CancellationToken _)
+    public async Task<ActionResult<TokenResult?>> Login(LoginRequest request, CancellationToken _)
     {
         if (string.IsNullOrWhiteSpace(request.Identifier))
         {
@@ -71,7 +72,7 @@ public class UserController : ControllerBase
 
     [AllowAnonymous]
     [HttpPost("register")]
-    public async Task<ActionResult<string?>> Register(RegisterRequest request, CancellationToken _)
+    public async Task<ActionResult<TokenResult?>> Register(RegisterRequest request, CancellationToken _)
     {
         if (!Helper.ValidateEmailString(request.Email))
         {
@@ -83,22 +84,17 @@ public class UserController : ControllerBase
             return ValidationProblem($"Invalid {nameof(request.Password)}");
         }
 
-        if (string.IsNullOrEmpty(request.FirstName))
+        if (string.IsNullOrEmpty(request.FullName))
         {
-            return ValidationProblem($"Invalid {nameof(request.FirstName)}");
-        }
-
-        if (string.IsNullOrEmpty(request.LastName))
-        {
-            return ValidationProblem($"Invalid {nameof(request.LastName)}");
+            return ValidationProblem($"Invalid {nameof(request.FullName)}");
         }
 
         var user = new Domain.Models.User.User()
         {
             UserName = request.Username ?? request.Email,
+            FullName = request.FullName,
+            PhoneNumber = request.Phone,
             Email = request.Email,
-            FirstName = request.FirstName,
-            LastName = request.LastName,
             Department = request.Department,
             DateOfBirth = request.DateOfBirth,
             // Position = request.Position,
@@ -187,5 +183,12 @@ public class UserController : ControllerBase
         {
             throw new HttpException("Upload profile picture failed.", HttpStatusCode.BadRequest);
         }
+    }
+
+    [AllowAnonymous]
+    [HttpGet("token-validation")]
+    public TokenResult ValidateToken(string validationToken)
+    {
+        return _authorizationService.ValidateToken(validationToken);
     }
 }

@@ -1,13 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using WDA.Domain.Models.Attachment;
 using WDA.Domain.Models.Customer;
-using WDA.Domain.Models.Document;
-using WDA.Domain.Models.Feedback;
-using WDA.Domain.Models.Thread;
 using WDA.Domain.Models.Transaction;
 using WDA.Domain.Models.User;
-using WDA.Shared;
-using Thread = WDA.Domain.Models.Thread.Thread;
 
 namespace WDA.Domain.Repositories;
 
@@ -23,12 +18,9 @@ public class UnitOfWork : IUnitOfWork
     private readonly UserManager<User> _userManager;
     private IBaseRepository<Customer>? _customerRepository;
     private IBaseRepository<Transaction>? _transactionRepository;
-    private IBaseRepository<Document>? _documentRepository;
     private IBaseRepository<Attachment>? _attachmentRepository;
-    private IBaseRepository<Thread>? _threadRepository;
-    private IBaseRepository<Reply>? _replyRepository;
-    private IBaseRepository<Feedback>? _feedbackRepository;
     private AdminRepository _adminRepository;
+    private TicketRepository _ticketRepository;
 
     public IBaseRepository<Customer> CustomerRepository
     {
@@ -53,18 +45,7 @@ public class UnitOfWork : IUnitOfWork
             return _transactionRepository;
         }
     }
-
-    public IBaseRepository<Document> DocumentRepository
-    {
-        get
-        {
-            if (_documentRepository is null)
-            {
-                _documentRepository = new DocumentRepository(_dbContext);
-            }
-            return _documentRepository;
-        }
-    }    
+    
     public IBaseRepository<Attachment> AttachmentRepository
     {
         get
@@ -76,41 +57,7 @@ public class UnitOfWork : IUnitOfWork
             return _attachmentRepository;
         }
     }
-
-    public IBaseRepository<Thread> ThreadRepository
-    {
-        get
-        {
-            if (_threadRepository is null)
-            {
-                _threadRepository = new ThreadRepository(_dbContext);
-            }
-            return _threadRepository;
-        }
-    }    
-    public IBaseRepository<Reply> ReplyRepository
-    {
-        get
-        {
-            if (_replyRepository is null)
-            {
-                _replyRepository = new ReplyRepository(_dbContext);
-            }
-            return _replyRepository;
-        }
-    }
-    public IBaseRepository<Feedback> FeedbackRepository
-    {
-        get
-        {
-            if (_feedbackRepository is null)
-            {
-                _feedbackRepository = new FeedbackRepository(_dbContext);
-            }
-            return _feedbackRepository;
-        }
-    }
-
+    
     public AdminRepository AdminRepository
     {
         get
@@ -123,6 +70,17 @@ public class UnitOfWork : IUnitOfWork
         }
     }
 
+    public TicketRepository TicketRepository
+    {
+        get
+        {
+            if (_ticketRepository is null)
+            {
+                _ticketRepository = new TicketRepository(_dbContext, _userManager);
+            }
+            return _ticketRepository;
+        }
+    }
     public async Task<bool> SaveChangesAsync(CancellationToken _ = default)
     {
         return await _dbContext.SaveChangesAsync(_) > 0;

@@ -22,7 +22,7 @@ public class AuthorizationService : IAuthorizationService
         _roleManager = roleManager;
     }
 
-    public async Task<string?> IssueToken(Domain.Models.User.User user, CancellationToken _ = default)
+    public async Task<TokenResult?> IssueToken(Domain.Models.User.User user, CancellationToken _ = default)
     {
         var claims = new List<Claim>();
 
@@ -42,10 +42,42 @@ public class AuthorizationService : IAuthorizationService
             claims: claims,
             signingCredentials: new SigningCredentials(signingKeys, SecurityAlgorithms.HmacSha256));
 
-        return _tokenHandler.WriteToken(token);
+        var tokenString= _tokenHandler.WriteToken(token);
+        return new TokenResult(tokenString,token.ValidTo );
     }
 
-    public async Task<string?> AuthorizeUser(string identifier, string password, CancellationToken _ = default)
+    public TokenResult IssueTemporaryToken(int duration, CancellationToken _ = default)
+    {
+        var claims = new List<Claim>();
+        
+        var signingKeys = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Instance.Jwt.Secret));
+
+        var token = new JwtSecurityToken(
+            AppSettings.Instance.Jwt.ValidIssuer,
+            AppSettings.Instance.Jwt.ValidAudience,
+            expires: DateTime.Now.AddDays(duration),
+            claims: claims,
+            signingCredentials: new SigningCredentials(signingKeys, SecurityAlgorithms.HmacSha256));
+
+        var tokenString= _tokenHandler.WriteToken(token);
+        return new TokenResult(tokenString,token.ValidTo );
+    }
+
+    public TokenResult ValidateToken(string token)
+    {
+        try
+        {
+            _tokenHandler.ValidateToken(token, GetJwtTokenValidationParameters(true), out _);
+            var decryptedToken = _tokenHandler.ReadJwtToken(token);
+            return new TokenResult(token, decryptedToken.ValidTo);
+        }
+        catch (Exception e)
+        {
+            throw new HttpException("The current user is not authorized to access this resource.", HttpStatusCode.Unauthorized);
+        }
+    }
+
+    public async Task<TokenResult?> AuthorizeUser(string identifier, string password, CancellationToken _ = default)
     {
         var user = await _userManager.FindByNameAsync(identifier) ?? await _userManager.FindByEmailAsync(identifier);
         if (user != null && await _userManager.CheckPasswordAsync(user, password))
@@ -84,4 +116,18 @@ public class AuthorizationService : IAuthorizationService
         var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
         return result;
     }
+    public static TokenValidationParameters GetJwtTokenValidationParameters(bool validateLifeTime = true)
+    {
+        return new TokenValidationParameters
+        {
+            ValidIssuer = AppSettings.Instance.Jwt.ValidIssuer,
+            ValidAudience = AppSettings.Instance.Jwt.ValidAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AppSettings.Instance.Jwt.Secret)),
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = validateLifeTime,
+            ValidateIssuer = true,
+            ValidateAudience = true
+        };
+    }
 }
+

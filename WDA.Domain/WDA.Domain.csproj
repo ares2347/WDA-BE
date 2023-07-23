@@ -21,14 +21,42 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.5" />
     <PackageReference Include="NewId" Version="4.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Migrations\" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\WDA.Shared\WDA.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Models\Email\BuiltInTemplates\NotImplemented.txt" />
+    <EmbeddedResource Include="Models\Email\BuiltInTemplates\NotImplemented.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Remove="Models\Email\BuiltInTemplates\TicketClosed.txt" />
+    <EmbeddedResource Include="Models\Email\BuiltInTemplates\TicketClosed.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Remove="Models\Email\BuiltInTemplates\TicketDone.txt" />
+    <EmbeddedResource Include="Models\Email\BuiltInTemplates\TicketDone.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Remove="Models\Email\BuiltInTemplates\TicketOpened.txt" />
+    <EmbeddedResource Include="Models\Email\BuiltInTemplates\TicketOpened.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Remove="Models\Email\BuiltInTemplates\TicketPending.txt" />
+    <EmbeddedResource Include="Models\Email\BuiltInTemplates\TicketPending.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Remove="Models\Email\BuiltInTemplates\TicketProcessing.txt" />
+    <EmbeddedResource Include="Models\Email\BuiltInTemplates\TicketProcessing.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Remove="Models\Email\BuiltInTemplates\TransactionCompleted.txt" />
+    <EmbeddedResource Include="Models\Email\BuiltInTemplates\TransactionCompleted.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
