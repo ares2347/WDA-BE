@@ -7,6 +7,7 @@ public sealed class AppSettings
     public Jwt Jwt { get; set; }
     public Cors Cors { get; set; }
     public AzureStorage AzureStorage { get; set; }
+    public Smtp Smtp { get; set; }
 }
 public sealed class ConnectionStrings
 {
@@ -27,4 +28,13 @@ public sealed class Cors
 public sealed class AzureStorage
 {
     public string ConnectionString { get; set; }
+}
+public sealed class Smtp
+{
+    public string Server { get; set; }
+    public int Port { get; set; }
+    public string Email { get; set; }
+    public string Password { get; set; }
+    public string From { get; set; }
+    public string DisplayName { get; set; }
 }
