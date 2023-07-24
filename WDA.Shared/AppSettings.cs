@@ -32,7 +32,6 @@ public sealed class AzureStorage
 public sealed class Smtp
 {
     public string Server { get; set; }
-    public int Port { get; set; }
     public string Email { get; set; }
     public string Password { get; set; }
     public string From { get; set; }

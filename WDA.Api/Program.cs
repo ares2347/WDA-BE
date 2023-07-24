@@ -55,7 +55,7 @@ public class Program
             UserContext.Build(x.GetRequiredService<IHttpContextAccessor>()?.HttpContext?.User));
 
         //Email service regstration
-        builder.Services.AddScoped<SmtpClient>(_ => new SmtpClient(AppSettings.Instance.Smtp.Server, AppSettings.Instance.Smtp.Port)
+        builder.Services.AddScoped<SmtpClient>(_ => new SmtpClient(AppSettings.Instance.Smtp.Server, 587)
         {
             EnableSsl = true,
             UseDefaultCredentials = false,
