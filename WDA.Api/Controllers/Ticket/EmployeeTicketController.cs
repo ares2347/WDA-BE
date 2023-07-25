@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WDA.Api.Dto.CustomerTicket;
-using WDA.Domain;
+using WDA.Api.Dto.EmployeeTicket;
 using WDA.Domain.Enums;
 using WDA.Domain.Models.Email;
 using WDA.Domain.Models.Ticket;
@@ -18,7 +18,7 @@ namespace WDA.Api.Controllers.Ticket;
 
 [Route("api/[controller]")]
 [ApiController]
-public class CustomerTicketController : ControllerBase
+public class EmployeeTicketController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
@@ -27,7 +27,7 @@ public class CustomerTicketController : ControllerBase
     private readonly UserManager<Domain.Models.User.User> _userManager;
     private readonly IAuthorizationService _authorizationService;
 
-    public CustomerTicketController(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService,
+    public EmployeeTicketController(IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService,
         UserContext userContext, UserManager<Domain.Models.User.User> userManager,
         IAuthorizationService authorizationService)
     {
@@ -39,12 +39,13 @@ public class CustomerTicketController : ControllerBase
         _authorizationService = authorizationService;
     }
 
+    [Authorize]
     [HttpGet]
-    public ActionResult<IQueryable<CustomerTicketResponse>> GetCustomerTickets(TicketStatus? status,
+    public ActionResult<IQueryable<EmployeeTicketResponse>> GetEmployeeTickets(TicketStatus? status,
         CancellationToken _, int page = 0,
         int size = 10)
     {
-        var res = _unitOfWork.TicketRepository.GetCustomerTickets(x => !x.IsDeleted, size, page);
+        var res = _unitOfWork.TicketRepository.GetEmployeeTickets(x => !x.IsDeleted, size, page);
         if (status is not null)
         {
             res = res.Where(x => x.Status == status);
@@ -54,46 +55,40 @@ public class CustomerTicketController : ControllerBase
     }
 
     [Authorize]
-    [HttpGet("AssignedTickets")]
-    public ActionResult<IQueryable<CustomerTicketResponse>> GetAssignedTickets(CancellationToken _, int page = 0,
+    [HttpGet("TicketsByEmployee/{employeeId:guid}")]
+    public ActionResult<IQueryable<EmployeeTicketResponse>> GetMyTickets([FromRoute] Guid employeeId,
+        CancellationToken _, int page = 0,
         int size = 10)
     {
-        var res = _unitOfWork.TicketRepository.GetCustomerTickets(
-            x => !x.IsDeleted && x.ResolverId == _userContext.UserId, size, page);
+        var res = _unitOfWork.TicketRepository.GetEmployeeTickets(
+            x => !x.IsDeleted && x.RequestorId == employeeId, size, page);
         return Ok(res);
     }
 
     [Authorize]
-    [HttpGet("TicketsByCustomer/{customerId:guid}")]
-    public ActionResult<IQueryable<CustomerTicketResponse>> GetMyTickets([FromRoute] Guid customerId, CancellationToken _, int page = 0,
+    [HttpGet("AssignedTickets")]
+    public ActionResult<IQueryable<EmployeeTicketResponse>> GetAssignedTickets(CancellationToken _, int page = 0,
         int size = 10)
     {
-        var res = _unitOfWork.TicketRepository.GetCustomerTickets(
-            x => !x.IsDeleted && x.RequestorId == customerId, size, page);
+        var res = _unitOfWork.TicketRepository.GetEmployeeTickets(
+            x => !x.IsDeleted && x.ResolverId == _userContext.UserId, size, page);
         return Ok(res);
     }
 
     [HttpPost("Create")]
-    public async Task<ActionResult<CustomerTicketResponse>> CreateCustomerTickets(CreateCustomerTicketRequest request,
+    public async Task<ActionResult<EmployeeTicketResponse>> CreateEmployeeTickets(CreateEmployeeTicketRequest request,
         CancellationToken _)
     {
         try
         {
             _authorizationService.ValidateToken(request.ValidationToken);
             //create customer ticket
-            var terst = await _unitOfWork.TicketRepository.GetCustomerTickets(x =>
-                    x.Requestor.CustomerId == request.CustomerId && x.Status != TicketStatus.Closed, null, null)
-                .ToListAsync(_);
-            var isNotSubmittable = await _unitOfWork.TicketRepository.GetCustomerTickets(x =>
-                    x.Requestor.CustomerId == request.CustomerId && x.Status != TicketStatus.Closed, null, null)
-                .AnyAsync(_);
-            if (isNotSubmittable) return BadRequest("Customer already has an unclosed ticket!");
-            var ticket = _mapper.Map<CustomerTicket>(request);
-            var customer = await _unitOfWork.CustomerRepository.GetById(request.CustomerId, _);
-            if (customer is null) return NotFound("Customer not found");
-            ticket.Requestor = customer;
+            var ticket = _mapper.Map<EmployeeTicket>(request);
+            var requestor = await _userManager.FindByIdAsync(request.EmployeeId.ToString());
+            if (requestor is null) return NotFound("Employee not found");
+            ticket.Requestor = requestor;
             ticket.Status = TicketStatus.Opened;
-            var res = _unitOfWork.TicketRepository.CreateCustomerTicket(ticket);
+            var res = _unitOfWork.TicketRepository.CreateEmployeeTicket(ticket);
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email
@@ -104,7 +99,7 @@ public class CustomerTicketController : ControllerBase
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
-                { "RequestorFullName", ticket.Requestor.Name },
+                { "RequestorFullName", ticket.Requestor.FullName ?? ticket.Requestor.Email ?? string.Empty },
             };
             var bodyBuilder = new StringBuilder(emailTemplate.Body);
             foreach (var pair in replacements)
@@ -119,7 +114,7 @@ public class CustomerTicketController : ControllerBase
             await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
             //end of send email
 
-            var result = _mapper.Map<CustomerTicketResponse>(res);
+            var result = _mapper.Map<EmployeeTicketResponse>(res);
             return Ok(result);
         }
         catch (Exception e)
@@ -128,26 +123,26 @@ public class CustomerTicketController : ControllerBase
         }
     }
 
-    [Authorize]
+    [Authorize(Roles = $"{RoleName.Hr},{RoleName.HrManager}")]
     [HttpPut("Assign")]
-    public async Task<ActionResult<CustomerTicketResponse>> AssignCustomerTicket(AssignCustomerTicketRequest request,
+    public async Task<ActionResult<EmployeeTicketResponse>> AssignEmployeeTicket(AssignEmployeeTicketRequest request,
         CancellationToken _)
     {
         try
         {
             var ticket = await _unitOfWork.TicketRepository
-                .GetCustomerTickets(
+                .GetEmployeeTickets(
                     x => !x.IsDeleted && x.TicketId == request.TicketId && x.Status == TicketStatus.Opened, null, null)
                 .FirstOrDefaultAsync(_);
             if (ticket is null) return NotFound("Ticket not found.");
-            if (!_userContext.Roles.Contains(RoleName.SaleManager) && request.EmployeeId is not null &&
+            if (!_userContext.Roles.Contains(RoleName.HrManager) && request.EmployeeId is not null &&
                 _userContext.UserId != request.EmployeeId)
                 return Unauthorized("Unauthorized to perform action.");
             var resolver =
                 await _userManager.FindByIdAsync(request.EmployeeId?.ToString() ?? _userContext.UserId.ToString());
             ticket.Resolver = resolver;
             ticket.Status = TicketStatus.Pending;
-            var res = _unitOfWork.TicketRepository.UpdateCustomerTicket(ticket);
+            var res = _unitOfWork.TicketRepository.UpdateEmployeeTicket(ticket);
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
@@ -158,7 +153,7 @@ public class CustomerTicketController : ControllerBase
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
-                { "RequestorFullName", ticket.Requestor.Name },
+                { "RequestorFullName", ticket.Requestor.FullName ?? string.Empty },
                 { "ResolverFullName", ticket.Resolver?.FullName ?? string.Empty },
             };
             var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
@@ -169,7 +164,7 @@ public class CustomerTicketController : ControllerBase
 
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
+                return NotFound("Requestor not found");
 
             await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
             //end of send email customer
@@ -189,11 +184,11 @@ public class CustomerTicketController : ControllerBase
 
             if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
                 !Helper.ValidateEmailString(res?.Resolver?.Email ?? string.Empty))
-                return NotFound("Customer not found");
+                return NotFound("Resolver not found");
 
             await _emailService.Send(employeeEmailSubject, bodyBuilder.ToString(), res!.Resolver!.Email, null, null, _);
             //end of send email employee
-            var result = _mapper.Map<CustomerTicketResponse>(res);
+            var result = _mapper.Map<EmployeeTicketResponse>(res);
             return Ok(result);
         }
         catch (Exception e)
@@ -202,22 +197,22 @@ public class CustomerTicketController : ControllerBase
         }
     }
 
-    [Authorize]
-    [HttpPut("Processing")]
-    public async Task<ActionResult<CustomerTicketResponse>> ProcessingCustomerTicket(
-        ProcessingCustomerTicketRequest request,
+    [Authorize(Roles = $"{RoleName.Hr},{RoleName.HrManager}")]
+    [HttpPut("Processing/{ticketId:guid}")]
+    public async Task<ActionResult<EmployeeTicketResponse>> ProcessingEmployeeTicket(
+        [FromRoute] Guid ticketId,
         CancellationToken _)
     {
         try
         {
             var ticket = await _unitOfWork.TicketRepository
-                .GetCustomerTickets(
-                    x => !x.IsDeleted && x.TicketId == request.TicketId && x.ResolverId == _userContext.UserId &&
+                .GetEmployeeTickets(
+                    x => !x.IsDeleted && x.TicketId == ticketId && x.ResolverId == _userContext.UserId &&
                          x.Status == TicketStatus.Pending, null, null)
                 .FirstOrDefaultAsync(_);
             if (ticket is null) return NotFound("Ticket not found.");
             ticket.Status = TicketStatus.Processing;
-            var res = _unitOfWork.TicketRepository.UpdateCustomerTicket(ticket);
+            var res = _unitOfWork.TicketRepository.UpdateEmployeeTicket(ticket);
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
@@ -228,7 +223,7 @@ public class CustomerTicketController : ControllerBase
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
-                { "RequestorFullName", ticket.Requestor.Name },
+                { "RequestorFullName", ticket.Requestor.FullName ?? string.Empty },
                 { "ResolverFullName", ticket.Resolver?.FullName ?? string.Empty },
             };
             var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
@@ -239,12 +234,12 @@ public class CustomerTicketController : ControllerBase
 
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
+                return NotFound("Requestor not found");
 
             await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
             //end of send email customer
 
-            var result = _mapper.Map<CustomerTicketResponse>(res);
+            var result = _mapper.Map<EmployeeTicketResponse>(res);
             return Ok(result);
         }
         catch (Exception e)
@@ -253,22 +248,22 @@ public class CustomerTicketController : ControllerBase
         }
     }
 
-    [Authorize]
-    [HttpPut("Complete")]
-    public async Task<ActionResult<CustomerTicketResponse>> CompleteCustomerTicket(
-        CompleteCustomerTicketRequest request,
+    [Authorize(Roles = $"{RoleName.Hr},{RoleName.HrManager}")]
+    [HttpPut("Complete/{ticketId:guid}")]
+    public async Task<ActionResult<EmployeeTicketResponse>> CompleteEmployeeTicket(
+        [FromRoute] Guid ticketId,
         CancellationToken _)
     {
         try
         {
             var ticket = await _unitOfWork.TicketRepository
-                .GetCustomerTickets(
-                    x => !x.IsDeleted && x.TicketId == request.TicketId && x.ResolverId == _userContext.UserId &&
+                .GetEmployeeTickets(
+                    x => !x.IsDeleted && x.TicketId == ticketId && x.ResolverId == _userContext.UserId &&
                          x.Status == TicketStatus.Processing, null, null)
                 .FirstOrDefaultAsync(_);
             if (ticket is null) return NotFound("Ticket not found.");
             ticket.Status = TicketStatus.Done;
-            var res = _unitOfWork.TicketRepository.UpdateCustomerTicket(ticket);
+            var res = _unitOfWork.TicketRepository.UpdateEmployeeTicket(ticket);
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
@@ -279,7 +274,7 @@ public class CustomerTicketController : ControllerBase
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
-                { "RequestorFullName", ticket.Requestor.Name },
+                { "RequestorFullName", ticket.Requestor.FullName ?? string.Empty },
                 { "ReviewTicketUrl", "url" },
             };
             var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
@@ -290,12 +285,12 @@ public class CustomerTicketController : ControllerBase
 
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
+                return NotFound("Requestor not found");
 
             await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
             //end of send email customer
 
-            var result = _mapper.Map<CustomerTicketResponse>(res);
+            var result = _mapper.Map<EmployeeTicketResponse>(res);
             return Ok(result);
         }
         catch (Exception e)
@@ -304,32 +299,23 @@ public class CustomerTicketController : ControllerBase
         }
     }
 
-    [HttpPut("Reopen")]
-    public async Task<ActionResult<CustomerTicketResponse>> ReopenCustomerTickets(ReopenCustomerTicketRequest request,
+    [Authorize]
+    [HttpPut("Reopen/{ticketId:guid}")]
+    public async Task<ActionResult<EmployeeTicketResponse>> ReopenEmployeeTickets([FromRoute] Guid ticketId,
+        ReopenEmployeeTicketRequest request,
         CancellationToken _)
     {
         try
         {
-            var ticket = await _unitOfWork.TicketRepository.GetCustomerTickets(x =>
-                    x.TicketId == request.TicketId &&
+            var ticket = await _unitOfWork.TicketRepository.GetEmployeeTickets(x =>
+                    x.TicketId == ticketId &&
                     (x.Status == TicketStatus.Closed || x.Status == TicketStatus.Done), null, null)
                 .FirstOrDefaultAsync(_);
             if (ticket is null) return NotFound("Ticket not found.");
 
-            if (request.ValidationToken is null)
-            {
-                if (_userContext.UserId != ticket.ResolverId) return Unauthorized("Unauthorized to perform action.");
-            }
-
-            if (request.ValidationToken is not null)
-            {
-                _authorizationService.ValidateToken(request.ValidationToken);
-            }
-            //
-
             ticket.Status = TicketStatus.Pending;
             ticket.ReopenReasons.Add(request.Content);
-            var res = _unitOfWork.TicketRepository.UpdateCustomerTicket(ticket);
+            var res = _unitOfWork.TicketRepository.UpdateEmployeeTicket(ticket);
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
@@ -348,7 +334,7 @@ public class CustomerTicketController : ControllerBase
 
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
+                return NotFound("Requestor not found");
 
             await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
             //end of send email customer
@@ -369,12 +355,12 @@ public class CustomerTicketController : ControllerBase
 
             if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
                 !Helper.ValidateEmailString(res?.Resolver?.Email ?? string.Empty))
-                return NotFound("Customer not found");
+                return NotFound("Resolver not found");
 
             await _emailService.Send(employeeEmailSubject, bodyBuilder.ToString(), res!.Resolver!.Email, null, null, _);
             //end of send email employee
 
-            var result = _mapper.Map<CustomerTicketResponse>(res);
+            var result = _mapper.Map<EmployeeTicketResponse>(res);
             return Ok(result);
         }
         catch (Exception e)
@@ -383,32 +369,23 @@ public class CustomerTicketController : ControllerBase
         }
     }
 
-    [HttpPut("Close")]
-    public async Task<ActionResult<CustomerTicketResponse>> CloseCustomerTicket(
-        CloseCustomerTicketRequest request,
+    [Authorize]
+    [HttpPut("Close/{ticketId:guid}")]
+    public async Task<ActionResult<EmployeeTicketResponse>> CloseEmployeeTicket(
+        [FromRoute] Guid ticketId,
         CancellationToken _)
     {
         try
         {
             var ticket = await _unitOfWork.TicketRepository
-                .GetCustomerTickets(
-                    x => !x.IsDeleted && x.TicketId == request.TicketId &&
+                .GetEmployeeTickets(
+                    x => !x.IsDeleted && x.TicketId == ticketId &&
                          x.Status == TicketStatus.Done, null, null)
                 .FirstOrDefaultAsync(_);
             if (ticket is null) return NotFound("Ticket not found.");
-            if (request.ValidationToken is null)
-            {
-                if (_userContext.UserId != ticket.ResolverId) return Unauthorized("Unauthorized to perform action.");
-            }
 
-            if (request.ValidationToken is not null)
-            {
-                _authorizationService.ValidateToken(request.ValidationToken);
-            }
-
-            //
             ticket.Status = TicketStatus.Closed;
-            var res = _unitOfWork.TicketRepository.UpdateCustomerTicket(ticket);
+            var res = _unitOfWork.TicketRepository.UpdateEmployeeTicket(ticket);
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
@@ -419,7 +396,7 @@ public class CustomerTicketController : ControllerBase
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
-                { "CustomerFullName", ticket.Requestor.Name },
+                { "CustomerFullName", ticket.Requestor.FullName ?? string.Empty },
                 { "CreateTicketUrl", "url" },
                 { "ViewTicketUrl", "url" },
             };
@@ -431,12 +408,12 @@ public class CustomerTicketController : ControllerBase
 
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
+                return NotFound("Requestor not found");
 
             await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
             //end of send email customer
 
-            var result = _mapper.Map<CustomerTicketResponse>(res);
+            var result = _mapper.Map<EmployeeTicketResponse>(res);
             return Ok(result);
         }
         catch (Exception e)

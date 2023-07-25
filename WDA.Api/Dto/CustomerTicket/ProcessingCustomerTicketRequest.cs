@@ -1,4 +1,4 @@
-namespace WDA.Api.Dto.Ticket;
+namespace WDA.Api.Dto.CustomerTicket;
 
 public class ProcessingCustomerTicketRequest
 {

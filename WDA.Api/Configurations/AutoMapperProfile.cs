@@ -2,7 +2,8 @@
 using WDA.Api.Dto.Attachment;
 using WDA.Api.Dto.Customer.Request;
 using WDA.Api.Dto.Customer.Response;
-using WDA.Api.Dto.Ticket;
+using WDA.Api.Dto.CustomerTicket;
+using WDA.Api.Dto.EmployeeTicket;
 using WDA.Api.Dto.Transaction.Request;
 using WDA.Api.Dto.Transaction.Response;
 using WDA.Api.Dto.User.Response;
@@ -48,6 +49,10 @@ public class AutoMapperProfile : Profile
         
         //Customer ticket mapping 
         CreateMap<CreateCustomerTicketRequest, CustomerTicket>();
-        CreateMap<CustomerTicket, CustomerTicketResponse>();
+        CreateMap<CustomerTicket, CustomerTicketResponse>();        
+        
+        //Customer ticket mapping 
+        CreateMap<CreateEmployeeTicketRequest, EmployeeTicket>();
+        CreateMap<EmployeeTicket, EmployeeTicketResponse>();
     }
 }

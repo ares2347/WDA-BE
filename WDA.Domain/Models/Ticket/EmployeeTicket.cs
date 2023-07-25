@@ -12,6 +12,7 @@ public class EmployeeTicket
     public TicketStatus Status { get; set; }
     public bool IsDeleted { get; set; } = false;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset LastModified { get; set; } = DateTimeOffset.UtcNow;
     public EmployeeTicketCategory TicketCategory { get; set; }
     public List<string> ReopenReasons { get; set; } = new();
     [ForeignKey("Resolver")] public Guid ResolverId { get; set; }

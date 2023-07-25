@@ -12,6 +12,7 @@ public class CustomerTicket
     public TicketStatus Status { get; set; } = TicketStatus.Opened;
     public bool IsDeleted { get; set; } = false;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset LastModified { get; set; } = DateTimeOffset.UtcNow;
     public CustomerTicketCategory TicketCategory { get; set; }
     public List<string> ReopenReasons { get; set; } = new();
     [ForeignKey("Requestor")] public Guid RequestorId { get; set; }

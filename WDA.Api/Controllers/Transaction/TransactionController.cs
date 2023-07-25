@@ -69,16 +69,24 @@ public class TransactionController : ControllerBase
             var emailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TransactionCompleted, _);
             var subject = emailTemplate!.Subject.Replace("[[TransactionId]]",
                 transactionRes?.TransactionId.ToString() ?? string.Empty);
-            var replacements = new Dictionary<string, string>
+            if (transactionRes is not null)
             {
-            };
-            var bodyBuilder = new StringBuilder(emailTemplate.Body);
-            foreach (var pair in replacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
+                var replacements = new Dictionary<string, string>
+                {
+                    {"CreatedAt", $"{transactionRes.CreatedAt!.Value:D} "},
+                    {"TransactionId", transactionRes.TransactionId.ToString()},
+                    {"CustomerFullName", transactionRes.Customer.Name},
+                    {"CreateTicketUrl", "url"}
+                };
+                var bodyBuilder = new StringBuilder(emailTemplate.Body);
+                foreach (var pair in replacements)
+                {
+                    bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
+                }
+
+                await _emailService.Send(subject, bodyBuilder.ToString(), customer.Email, null, null, _);
             }
 
-            await _emailService.Send(subject, bodyBuilder.ToString(), customer.Email, null, null, _);
             //end of send email
 
             var result = _mapper.Map<TransactionResponse>(transactionRes);

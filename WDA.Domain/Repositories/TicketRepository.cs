@@ -40,8 +40,8 @@ public class TicketRepository
                 query = query.Take(size.Value);
             }
         }
-        
-        
+
+
         return query;
     }
 
@@ -49,11 +49,43 @@ public class TicketRepository
     {
         var res = _dbContext.CustomerTickets.Add(ticket);
         return res.Entity;
-    }    
-    
+    }
+
     public CustomerTicket UpdateCustomerTicket(CustomerTicket ticket)
     {
+        ticket.LastModified = DateTimeOffset.UtcNow;
         var res = _dbContext.CustomerTickets.Update(ticket);
+        return res.Entity;
+    }
+
+    public IQueryable<EmployeeTicket> GetEmployeeTickets(Expression<Func<EmployeeTicket, bool>>? expression,
+        int? size, int? page)
+    {
+        var query = _dbContext.EmployeeTickets
+            .Include(x => x.Requestor)
+            .Include(x => x.Resolver).AsQueryable();
+        if (expression is not null)
+        {
+            query = query.Where(expression);
+        }
+
+        if (size is null) return query;
+        query = page is not null ? query.Skip(page.Value * size.Value).Take(size.Value) : query.Take(size.Value);
+
+
+        return query;
+    }
+
+    public EmployeeTicket CreateEmployeeTicket(EmployeeTicket ticket)
+    {
+        var res = _dbContext.EmployeeTickets.Add(ticket);
+        return res.Entity;
+    }
+
+    public EmployeeTicket UpdateEmployeeTicket(EmployeeTicket ticket)
+    {
+        ticket.LastModified = DateTimeOffset.UtcNow;
+        var res = _dbContext.EmployeeTickets.Update(ticket);
         return res.Entity;
     }
 }
