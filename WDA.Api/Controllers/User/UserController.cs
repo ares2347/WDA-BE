@@ -101,10 +101,18 @@ public class UserController : ControllerBase
             // Only force users to change password at first login if the account password is not identified
             PasswordChangeRequired = request.Password is null,
         };
-
-        var res = await _authorizationService.RegisterUser(user, request.Roles, request.Password, _);
-        var token = await _authorizationService.IssueToken(res, _);
-        return Ok(token);
+        try
+        {
+            var res = await _authorizationService.RegisterUser(user, request.Roles, request.Password, _);
+            if (res is null) return NotFound("User not found.");
+            var token = await _authorizationService.IssueToken(res, _);
+            return Ok(token);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(e.Message);
+        }
+        
     }
 
     [HttpPost("change-password")]
