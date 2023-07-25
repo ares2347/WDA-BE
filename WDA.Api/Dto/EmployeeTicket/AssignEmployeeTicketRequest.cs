@@ -1,6 +1,6 @@
-namespace WDA.Api.Dto.Ticket;
+namespace WDA.Api.Dto.EmployeeTicket;
 
-public class AssignCustomerTicketRequest
+public class AssignEmployeeTicketRequest
 {
     public Guid TicketId { get; set; }
     public Guid? EmployeeId { get; set; }

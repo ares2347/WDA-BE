@@ -1,17 +1,15 @@
-using System.ComponentModel.DataAnnotations.Schema;
-using WDA.Api.Dto.Customer.Response;
 using WDA.Api.Dto.User.Response;
 using WDA.Domain.Enums;
 
-namespace WDA.Api.Dto.Ticket;
+namespace WDA.Api.Dto.EmployeeTicket;
 
-public class CustomerTicketResponse
+public class EmployeeTicketResponse
 {
     public Guid TicketId { get; set; }
     public string Content { get; set; } = string.Empty;
     public TicketStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
-    public CustomerTicketCategory TicketCategory { get; set; }
-    public CustomerResponse Requestor { get; set; }
+    public EmployeeTicketCategory TicketCategory { get; set; }
+    public UserInfoResponse Requestor { get; set; } = new();
     public UserInfoResponse? Resolver { get; set; }
 }

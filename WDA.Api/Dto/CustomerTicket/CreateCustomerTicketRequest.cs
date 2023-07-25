@@ -1,6 +1,6 @@
 using WDA.Domain.Enums;
 
-namespace WDA.Api.Dto.Ticket;
+namespace WDA.Api.Dto.CustomerTicket;
 
 public class CreateCustomerTicketRequest
 {

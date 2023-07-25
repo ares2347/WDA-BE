@@ -1,9 +1,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Mail;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using WDA.Api.Configurations;
 using WDA.Domain;
 using WDA.Domain.Repositories;
@@ -66,9 +68,14 @@ public class Program
         //
         builder.Services.AddSingleton<JwtSecurityTokenHandler>();
         builder.Services.AddControllers()
-            .AddNewtonsoftJson(opt => { opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore; });
+            .AddNewtonsoftJson(opt =>
+            {
+                opt.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                opt.SerializerSettings.Converters.Add(new StringEnumConverter());
+            });
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGenNewtonsoftSupport();
         builder.Services.AddSwaggerGen(c =>
         {
             c.UseDateOnlyTimeOnlyStringConverters();
