@@ -124,7 +124,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}");
+            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -198,7 +198,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}");
+            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -249,7 +249,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}");
+            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -300,7 +300,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}");
+            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -379,7 +379,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}");
+            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -441,7 +441,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}");
+            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 }
