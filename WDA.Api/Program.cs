@@ -61,7 +61,7 @@ public class Program
         {
             EnableSsl = true,
             UseDefaultCredentials = false,
-            Credentials = new NetworkCredential(AppSettings.Instance.Smtp.Email, AppSettings.Instance.Smtp.Password)
+            Credentials = new NetworkCredential(AppSettings.Instance.Smtp.Email, AppSettings.Instance.Smtp.Password, "outlook.com")
         });
         builder.Services.AddScoped<IEmailService, EmailService>();
         
