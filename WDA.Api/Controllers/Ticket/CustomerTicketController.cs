@@ -124,7 +124,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -198,7 +198,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -249,7 +249,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -300,7 +300,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -379,7 +379,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -441,7 +441,7 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 }
