@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Mail;
 using System.Text.Json.Serialization;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
@@ -64,7 +65,9 @@ public class Program
             Credentials = new NetworkCredential(AppSettings.Instance.Smtp.Email, AppSettings.Instance.Smtp.Password)
         });
         builder.Services.AddScoped<IEmailService, EmailService>();
-        
+        builder.Services.AddHangfire();
+        Configurations.Hangfire.RegisterRecurringJob();
+
         //
         builder.Services.AddSingleton<JwtSecurityTokenHandler>();
         builder.Services.AddControllers()
@@ -128,6 +131,11 @@ public class Program
         app.UseAuthorization();
         app.UseStaticFiles();
         app.MapControllers();
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = new[] { new HangfireDashboardAuthorizationFilter() },
+            IsReadOnlyFunc = _ => false
+        });
         //config get file name in header
         app.Use(async (context, next) =>
         {

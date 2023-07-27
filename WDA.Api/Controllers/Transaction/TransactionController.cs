@@ -13,6 +13,7 @@ using WDA.Domain.Models.Email;
 using WDA.Domain.Repositories;
 using WDA.Service.Email;
 using WDA.Shared;
+using IAuthorizationService = WDA.Service.User.IAuthorizationService;
 
 namespace WDA.Api.Controllers.Transaction;
 
@@ -26,15 +27,17 @@ public class TransactionController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly IEmailService _emailService;
+    private readonly IAuthorizationService _authorizationService;
 
     public TransactionController(UserContext userContext, UserManager<Domain.Models.User.User> userManager,
-        IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService)
+        IUnitOfWork unitOfWork, IMapper mapper, IEmailService emailService, IAuthorizationService authorizationService)
     {
         _userContext = userContext;
         _userManager = userManager;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _emailService = emailService;
+        _authorizationService = authorizationService;
     }
 
     [HttpGet]
@@ -66,26 +69,23 @@ public class TransactionController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email
-            var emailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TransactionCompleted, _);
-            var subject = emailTemplate!.Subject.Replace("[[TransactionId]]",
-                transactionRes?.TransactionId.ToString() ?? string.Empty);
-            if (transactionRes is not null)
+            if (string.IsNullOrEmpty(customer.Email) ||
+                !Helper.ValidateEmailString(customer.Email))
+                return NotFound("Customer email not found");
+            var validationToken = _authorizationService.IssueTemporaryToken(7, _);
+            var subjectReplacements = new Dictionary<string, string>
             {
-                var replacements = new Dictionary<string, string>
-                {
-                    {"CreatedAt", $"{transactionRes.CreatedAt!.Value:D} "},
-                    {"TransactionId", transactionRes.TransactionId.ToString()},
-                    {"CustomerFullName", transactionRes.Customer.Name},
-                    {"CreateTicketUrl", "url"}
-                };
-                var bodyBuilder = new StringBuilder(emailTemplate.Body);
-                foreach (var pair in replacements)
-                {
-                    bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-                }
-
-                await _emailService.Send(subject, bodyBuilder.ToString(), customer.Email, null, null, _);
-            }
+                { "TransactionId", transactionRes?.TransactionId.ToString() ?? string.Empty }
+            };
+            var bodyReplacements = new Dictionary<string, string>
+            {
+                { "CreatedAt", $"{transactionRes.CreatedAt!.Value:D} " },
+                { "TransactionId", transactionRes.TransactionId.ToString() },
+                { "CustomerFullName", transactionRes.Customer.Name },
+                { "CreateTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CreateTicketBaseUrl}?customerId={customer.CustomerId}&validationToken={validationToken.Token}" }
+            };
+            await _emailService.SendEmailNotification(EmailTemplateType.TransactionCompleted, customer.Email,
+                subjectReplacements, bodyReplacements, _: _);
 
             //end of send email
 

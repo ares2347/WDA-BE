@@ -97,26 +97,21 @@ public class CustomerTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email
-            var emailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketOpened, _);
-            var subject = emailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var replacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer not found");
+            
+            var subjectReplacements = new Dictionary<string, string>
+            {
+                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+            };
+            var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.Name },
             };
-            var bodyBuilder = new StringBuilder(emailTemplate.Body);
-            foreach (var pair in replacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+           await _emailService.SendEmailNotification(EmailTemplateType.TicketOpened,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
             //end of send email
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -151,47 +146,38 @@ public class CustomerTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketPending, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer not found");
+            
+            var customerSubjectReplacements = new Dictionary<string, string>
+            {
+                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+            };
+            var customerBodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.Name },
                 { "ResolverFullName", ticket.Resolver?.FullName ?? string.Empty },
             };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketPending,res!.Requestor.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
+            
             //end of send email customer
             //
             //send email employee
-            var employeeEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketAssigned, _);
-            var employeeEmailSubject = employeeEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var employeeReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
+                !Helper.ValidateEmailString(res?.Resolver.Email ?? string.Empty))
+                return NotFound("Customer not found");
+            
+            var employeeSubjectReplacements = new Dictionary<string, string>
+            {
+                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+            };
+            var employeeBodyReplacements = new Dictionary<string, string>
             {
             };
-            var employeeEmailBodyBuilder = new StringBuilder(employeeEmailTemplate.Body);
-            foreach (var pair in employeeReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
-                !Helper.ValidateEmailString(res?.Resolver?.Email ?? string.Empty))
-                return NotFound("Customer not found");
-
-            await _emailService.Send(employeeEmailSubject, bodyBuilder.ToString(), res!.Resolver!.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketAssigned,res!.Resolver.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
             //end of send email employee
             var result = _mapper.Map<CustomerTicketResponse>(res);
             return Ok(result);
@@ -221,27 +207,22 @@ public class CustomerTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketProcessing, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer email not found");
+            
+            var subjectReplacements = new Dictionary<string, string>
+            {
+                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+            };
+            var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.Name },
                 { "ResolverFullName", ticket.Resolver?.FullName ?? string.Empty },
             };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketProcessing,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -272,27 +253,22 @@ public class CustomerTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketDone, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer email not found");
+            
+            var subjectReplacements = new Dictionary<string, string>
+            {
+                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+            };
+            var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.Name },
                 { "ReviewTicketUrl", "url" },
             };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketDone,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -333,45 +309,34 @@ public class CustomerTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate =
-                await _emailService.GetEmailTemplate(EmailTemplateType.TicketReopenedRequestor, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
-            {
-            };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
                 return NotFound("Customer not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            
+            var customerSubjectReplacements = new Dictionary<string, string>
+            {
+                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+            };
+            var customerBodyReplacements = new Dictionary<string, string>
+            {
+            };
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketReopenedRequestor,res!.Requestor.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
             //end of send email customer
             //
             //send email employee
-            var employeeEmailTemplate =
-                await _emailService.GetEmailTemplate(EmailTemplateType.TicketReopenedResolver, _);
-            var employeeEmailSubject = employeeEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var employeeReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
+                !Helper.ValidateEmailString(res?.Resolver.Email ?? string.Empty))
+                return NotFound("Employee email not found");
+            
+            var employeeSubjectReplacements = new Dictionary<string, string>
+            {
+                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+            };
+            var employeeBodyReplacements = new Dictionary<string, string>
             {
             };
-            var employeeEmailBodyBuilder = new StringBuilder(employeeEmailTemplate.Body);
-            foreach (var pair in employeeReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
-                !Helper.ValidateEmailString(res?.Resolver?.Email ?? string.Empty))
-                return NotFound("Customer not found");
-
-            await _emailService.Send(employeeEmailSubject, bodyBuilder.ToString(), res!.Resolver!.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketReopenedResolver,res!.Resolver.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
+            
             //end of send email employee
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -412,28 +377,23 @@ public class CustomerTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketClosed, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer email not found");
+            var validationToken = _authorizationService.IssueTemporaryToken(7, _);
+            var subjectReplacements = new Dictionary<string, string>
+            {
+                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+            };
+            var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "CustomerFullName", ticket.Requestor.Name },
-                { "CreateTicketUrl", "url" },
+                { "CreateTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CreateTicketBaseUrl}?customerId={ticket.Requestor.CustomerId}&validationToken={validationToken.Token}" },
                 { "ViewTicketUrl", "url" },
             };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketClosed,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<CustomerTicketResponse>(res);

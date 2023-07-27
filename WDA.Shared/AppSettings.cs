@@ -8,6 +8,7 @@ public sealed class AppSettings
     public Cors Cors { get; set; }
     public AzureStorage AzureStorage { get; set; }
     public Smtp Smtp { get; set; }
+    public ClientConfiguration ClientConfiguration { get; set; }
 }
 public sealed class ConnectionStrings
 {
@@ -36,4 +37,9 @@ public sealed class Smtp
     public string Password { get; set; }
     public string From { get; set; }
     public string DisplayName { get; set; }
+}
+
+public sealed class ClientConfiguration
+{
+    public string CreateTicketBaseUrl { get; set; }
 }
