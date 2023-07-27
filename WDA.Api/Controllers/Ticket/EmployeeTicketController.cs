@@ -66,6 +66,16 @@ public class EmployeeTicketController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("{ticketId:guid}")]
+    public async Task<ActionResult<EmployeeTicketResponse>> GetEmployeeTickets([FromRoute] Guid ticketId,
+        CancellationToken _)
+    {
+        var res = await _unitOfWork.TicketRepository.GetEmployeeTickets(
+            x => !x.IsDeleted && x.TicketId == ticketId, 10, 0).FirstOrDefaultAsync(_);
+        return Ok(res);
+    }
+
+    [Authorize]
     [HttpGet("AssignedTickets")]
     public ActionResult<IQueryable<EmployeeTicketResponse>> GetAssignedTickets(CancellationToken _, int page = 0,
         int size = 10)
