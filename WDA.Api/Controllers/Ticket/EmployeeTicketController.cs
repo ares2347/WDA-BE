@@ -267,7 +267,7 @@ public class EmployeeTicketController : ControllerBase
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.FullName ?? string.Empty },
-                { "ReviewTicketUrl", "url" },
+                { "ReviewTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CloseTicketBaseUrl}?ticketId={ticket.TicketId}" },
             };
             await _emailService.SendEmailNotification(EmailTemplateType.TicketDone, res!.Requestor.Email,
                 subjectReplacements, bodyReplacements, _: _);
@@ -378,8 +378,8 @@ public class EmployeeTicketController : ControllerBase
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "CustomerFullName", ticket.Requestor.FullName ?? string.Empty },
-                { "CreateTicketUrl", "url" },
-                { "ViewTicketUrl", "url" },
+                { "CreateTicketUrl", $"{AppSettings.Instance.ClientConfiguration.SiteBaseUrl}" },
+                { "ViewTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CloseTicketBaseUrl}?ticketId={ticket.TicketId}" },
             };
             await _emailService.SendEmailNotification(EmailTemplateType.TicketClosed, res!.Requestor.Email,
                 subjectReplacements, bodyReplacements, _: _);

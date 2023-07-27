@@ -256,7 +256,7 @@ public class CustomerTicketController : ControllerBase
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
                 return NotFound("Customer email not found");
-            
+            var validationToken = _authorizationService.IssueTemporaryToken(7, _);
             var subjectReplacements = new Dictionary<string, string>
             {
                 {"TicketId", res?.TicketId.ToString() ?? string.Empty}
@@ -266,7 +266,7 @@ public class CustomerTicketController : ControllerBase
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.Name },
-                { "ReviewTicketUrl", "url" },
+                { "ReviewTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CloseTicketBaseUrl}?ticketId={ticket.TicketId}&validationToken={validationToken.Token}" },
             };
             await _emailService.SendEmailNotification(EmailTemplateType.TicketDone,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
@@ -391,7 +391,7 @@ public class CustomerTicketController : ControllerBase
                 { "TicketId", ticket.TicketId.ToString() },
                 { "CustomerFullName", ticket.Requestor.Name },
                 { "CreateTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CreateTicketBaseUrl}?customerId={ticket.Requestor.CustomerId}&validationToken={validationToken.Token}" },
-                { "ViewTicketUrl", "url" },
+                { "ViewTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CloseTicketBaseUrl}?ticketId={ticket.TicketId}&validationToken={validationToken.Token}"},
             };
             await _emailService.SendEmailNotification(EmailTemplateType.TicketClosed,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
