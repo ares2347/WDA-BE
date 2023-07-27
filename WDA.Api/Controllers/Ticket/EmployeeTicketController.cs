@@ -75,13 +75,13 @@ public class EmployeeTicketController : ControllerBase
         return Ok(res);
     }
 
+    [Authorize]
     [HttpPost("Create")]
     public async Task<ActionResult<EmployeeTicketResponse>> CreateEmployeeTickets(CreateEmployeeTicketRequest request,
         CancellationToken _)
     {
         try
         {
-            _authorizationService.ValidateToken(request.ValidationToken);
             //create customer ticket
             var ticket = _mapper.Map<EmployeeTicket>(request);
             var requestor = await _userManager.FindByIdAsync(request.EmployeeId.ToString());
@@ -92,26 +92,22 @@ public class EmployeeTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email
-            var emailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketOpened, _);
-            var subject = emailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var replacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer not found");
+
+            var subjectReplacements = new Dictionary<string, string>
+            {
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
+            };
+            var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.FullName ?? ticket.Requestor.Email ?? string.Empty },
             };
-            var bodyBuilder = new StringBuilder(emailTemplate.Body);
-            foreach (var pair in replacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Customer not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketOpened, res!.Requestor.Email,
+                subjectReplacements, bodyReplacements, _: _);
             //end of send email
 
             var result = _mapper.Map<EmployeeTicketResponse>(res);
@@ -119,7 +115,7 @@ public class EmployeeTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -132,7 +128,8 @@ public class EmployeeTicketController : ControllerBase
         {
             var ticket = await _unitOfWork.TicketRepository
                 .GetEmployeeTickets(
-                    x => !x.IsDeleted && x.TicketId == request.TicketId && x.Status == TicketStatus.Opened, null, null)
+                    x => !x.IsDeleted && x.TicketId == request.TicketId && x.Status == TicketStatus.Opened, null,
+                    null)
                 .FirstOrDefaultAsync(_);
             if (ticket is null) return NotFound("Ticket not found.");
             if (!_userContext.Roles.Contains(RoleName.HrManager) && request.EmployeeId is not null &&
@@ -146,54 +143,48 @@ public class EmployeeTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketPending, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer not found");
+
+            var customerSubjectReplacements = new Dictionary<string, string>
+            {
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
+            };
+            var customerBodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.FullName ?? string.Empty },
                 { "ResolverFullName", ticket.Resolver?.FullName ?? string.Empty },
             };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketPending, res!.Requestor.Email,
+                customerSubjectReplacements, customerBodyReplacements, _: _);
 
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Requestor not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
             //end of send email customer
             //
             //send email employee
-            var employeeEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketAssigned, _);
-            var employeeEmailSubject = employeeEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var employeeReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
+                !Helper.ValidateEmailString(res?.Resolver.Email ?? string.Empty))
+                return NotFound("Customer not found");
+
+            var employeeSubjectReplacements = new Dictionary<string, string>
+            {
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
+            };
+            var employeeBodyReplacements = new Dictionary<string, string>
             {
             };
-            var employeeEmailBodyBuilder = new StringBuilder(employeeEmailTemplate.Body);
-            foreach (var pair in employeeReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketAssigned, res!.Resolver.Email,
+                customerSubjectReplacements, customerBodyReplacements, _: _);
 
-            if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
-                !Helper.ValidateEmailString(res?.Resolver?.Email ?? string.Empty))
-                return NotFound("Resolver not found");
-
-            await _emailService.Send(employeeEmailSubject, bodyBuilder.ToString(), res!.Resolver!.Email, null, null, _);
             //end of send email employee
             var result = _mapper.Map<EmployeeTicketResponse>(res);
             return Ok(result);
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -216,27 +207,23 @@ public class EmployeeTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketProcessing, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer email not found");
+
+            var subjectReplacements = new Dictionary<string, string>
+            {
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
+            };
+            var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.FullName ?? string.Empty },
                 { "ResolverFullName", ticket.Resolver?.FullName ?? string.Empty },
             };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Requestor not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketProcessing, res!.Requestor.Email,
+                subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<EmployeeTicketResponse>(res);
@@ -244,7 +231,7 @@ public class EmployeeTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -267,27 +254,23 @@ public class EmployeeTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketDone, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer email not found");
+
+            var subjectReplacements = new Dictionary<string, string>
+            {
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
+            };
+            var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.FullName ?? string.Empty },
                 { "ReviewTicketUrl", "url" },
             };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Requestor not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketDone, res!.Requestor.Email,
+                subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<EmployeeTicketResponse>(res);
@@ -295,7 +278,7 @@ public class EmployeeTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -319,45 +302,38 @@ public class EmployeeTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate =
-                await _emailService.GetEmailTemplate(EmailTemplateType.TicketReopenedRequestor, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
-            {
-            };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Requestor not found");
+                return NotFound("Customer not found");
 
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            var customerSubjectReplacements = new Dictionary<string, string>
+            {
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
+            };
+            var customerBodyReplacements = new Dictionary<string, string>
+            {
+            };
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketReopenedRequestor,
+                res!.Requestor.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
+
             //end of send email customer
             //
             //send email employee
-            var employeeEmailTemplate =
-                await _emailService.GetEmailTemplate(EmailTemplateType.TicketReopenedResolver, _);
-            var employeeEmailSubject = employeeEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var employeeReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
+                !Helper.ValidateEmailString(res?.Resolver.Email ?? string.Empty))
+                return NotFound("Employee email not found");
+
+            var employeeSubjectReplacements = new Dictionary<string, string>
+            {
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
+            };
+            var employeeBodyReplacements = new Dictionary<string, string>
             {
             };
-            var employeeEmailBodyBuilder = new StringBuilder(employeeEmailTemplate.Body);
-            foreach (var pair in employeeReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketReopenedResolver, res!.Resolver.Email,
+                customerSubjectReplacements, customerBodyReplacements, _: _);
 
-            if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
-                !Helper.ValidateEmailString(res?.Resolver?.Email ?? string.Empty))
-                return NotFound("Resolver not found");
 
-            await _emailService.Send(employeeEmailSubject, bodyBuilder.ToString(), res!.Resolver!.Email, null, null, _);
             //end of send email employee
 
             var result = _mapper.Map<EmployeeTicketResponse>(res);
@@ -365,7 +341,7 @@ public class EmployeeTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 
@@ -389,10 +365,15 @@ public class EmployeeTicketController : ControllerBase
             await _unitOfWork.SaveChangesAsync(_);
 
             //send email customer
-            var customerEmailTemplate = await _emailService.GetEmailTemplate(EmailTemplateType.TicketClosed, _);
-            var subject = customerEmailTemplate!.Subject.Replace("[[TicketId]]",
-                res?.TicketId.ToString() ?? string.Empty);
-            var customerReplacements = new Dictionary<string, string>
+            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
+                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
+                return NotFound("Customer email not found");
+
+            var subjectReplacements = new Dictionary<string, string>
+            {
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
+            };
+            var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
@@ -400,17 +381,8 @@ public class EmployeeTicketController : ControllerBase
                 { "CreateTicketUrl", "url" },
                 { "ViewTicketUrl", "url" },
             };
-            var bodyBuilder = new StringBuilder(customerEmailTemplate.Body);
-            foreach (var pair in customerReplacements)
-            {
-                bodyBuilder.Replace($"[[{pair.Key}]]", pair.Value);
-            }
-
-            if (string.IsNullOrEmpty(res?.Requestor.Email) ||
-                !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
-                return NotFound("Requestor not found");
-
-            await _emailService.Send(subject, bodyBuilder.ToString(), res!.Requestor.Email, null, null, _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketClosed, res!.Requestor.Email,
+                subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<EmployeeTicketResponse>(res);
@@ -418,7 +390,7 @@ public class EmployeeTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest("Unexpected error occured.");
+            return BadRequest($"Unexpected error occured.{e.Message}");
         }
     }
 }
