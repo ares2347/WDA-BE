@@ -52,6 +52,14 @@ public class CustomerTicketController : ControllerBase
 
         return Ok(res);
     }
+    
+    [HttpGet("{ticketId:guid}")]
+    public async Task<ActionResult<CustomerTicketResponse?>> GetCustomerTicketById([FromRoute] Guid ticketId, CancellationToken _)
+    {
+        var res = await _unitOfWork.TicketRepository.GetCustomerTickets(x => !x.IsDeleted && x.TicketId == ticketId, 10, 0).FirstOrDefaultAsync(_);
+        if (res is null) return NotFound("TicketId not found");
+        return Ok(res);
+    }
 
     [Authorize]
     [HttpGet("AssignedTickets")]
@@ -65,7 +73,8 @@ public class CustomerTicketController : ControllerBase
 
     [Authorize]
     [HttpGet("TicketsByCustomer/{customerId:guid}")]
-    public ActionResult<IQueryable<CustomerTicketResponse>> GetMyTickets([FromRoute] Guid customerId, CancellationToken _, int page = 0,
+    public ActionResult<IQueryable<CustomerTicketResponse>> GetMyTickets([FromRoute] Guid customerId,
+        CancellationToken _, int page = 0,
         int size = 10)
     {
         var res = _unitOfWork.TicketRepository.GetCustomerTickets(
@@ -100,10 +109,10 @@ public class CustomerTicketController : ControllerBase
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
                 return NotFound("Customer not found");
-            
+
             var subjectReplacements = new Dictionary<string, string>
             {
-                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
             };
             var bodyReplacements = new Dictionary<string, string>
             {
@@ -111,7 +120,8 @@ public class CustomerTicketController : ControllerBase
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.Name },
             };
-           await _emailService.SendEmailNotification(EmailTemplateType.TicketOpened,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketOpened, res!.Requestor.Email,
+                subjectReplacements, bodyReplacements, _: _);
             //end of send email
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -119,7 +129,8 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
+            return BadRequest(
+                $"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -149,10 +160,10 @@ public class CustomerTicketController : ControllerBase
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
                 return NotFound("Customer not found");
-            
+
             var customerSubjectReplacements = new Dictionary<string, string>
             {
-                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
             };
             var customerBodyReplacements = new Dictionary<string, string>
             {
@@ -161,30 +172,33 @@ public class CustomerTicketController : ControllerBase
                 { "RequestorFullName", ticket.Requestor.Name },
                 { "ResolverFullName", ticket.Resolver?.FullName ?? string.Empty },
             };
-            await _emailService.SendEmailNotification(EmailTemplateType.TicketPending,res!.Requestor.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
-            
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketPending, res!.Requestor.Email,
+                customerSubjectReplacements, customerBodyReplacements, _: _);
+
             //end of send email customer
             //
             //send email employee
             if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
                 !Helper.ValidateEmailString(res?.Resolver.Email ?? string.Empty))
                 return NotFound("Customer not found");
-            
+
             var employeeSubjectReplacements = new Dictionary<string, string>
             {
-                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
             };
             var employeeBodyReplacements = new Dictionary<string, string>
             {
             };
-            await _emailService.SendEmailNotification(EmailTemplateType.TicketAssigned,res!.Resolver.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketAssigned, res!.Resolver.Email,
+                customerSubjectReplacements, customerBodyReplacements, _: _);
             //end of send email employee
             var result = _mapper.Map<CustomerTicketResponse>(res);
             return Ok(result);
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
+            return BadRequest(
+                $"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -210,10 +224,10 @@ public class CustomerTicketController : ControllerBase
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
                 return NotFound("Customer email not found");
-            
+
             var subjectReplacements = new Dictionary<string, string>
             {
-                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
             };
             var bodyReplacements = new Dictionary<string, string>
             {
@@ -222,7 +236,8 @@ public class CustomerTicketController : ControllerBase
                 { "RequestorFullName", ticket.Requestor.Name },
                 { "ResolverFullName", ticket.Resolver?.FullName ?? string.Empty },
             };
-            await _emailService.SendEmailNotification(EmailTemplateType.TicketProcessing,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketProcessing, res!.Requestor.Email,
+                subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -230,7 +245,8 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
+            return BadRequest(
+                $"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -259,16 +275,20 @@ public class CustomerTicketController : ControllerBase
             var validationToken = _authorizationService.IssueTemporaryToken(7, _);
             var subjectReplacements = new Dictionary<string, string>
             {
-                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
             };
             var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "RequestorFullName", ticket.Requestor.Name },
-                { "ReviewTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CloseTicketBaseUrl}?ticketId={ticket.TicketId}&validationToken={validationToken.Token}" },
+                {
+                    "ReviewTicketUrl",
+                    $"{AppSettings.Instance.ClientConfiguration.CloseTicketBaseUrl}?ticketId={ticket.TicketId}&validationToken={validationToken.Token}"
+                },
             };
-            await _emailService.SendEmailNotification(EmailTemplateType.TicketDone,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketDone, res!.Requestor.Email,
+                subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -276,7 +296,8 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
+            return BadRequest(
+                $"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -312,31 +333,33 @@ public class CustomerTicketController : ControllerBase
             if (string.IsNullOrEmpty(res?.Requestor.Email) ||
                 !Helper.ValidateEmailString(res?.Requestor.Email ?? string.Empty))
                 return NotFound("Customer not found");
-            
+
             var customerSubjectReplacements = new Dictionary<string, string>
             {
-                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
             };
             var customerBodyReplacements = new Dictionary<string, string>
             {
             };
-            await _emailService.SendEmailNotification(EmailTemplateType.TicketReopenedRequestor,res!.Requestor.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketReopenedRequestor, res!.Requestor.Email,
+                customerSubjectReplacements, customerBodyReplacements, _: _);
             //end of send email customer
             //
             //send email employee
             if (string.IsNullOrEmpty(res?.Resolver?.Email) ||
                 !Helper.ValidateEmailString(res?.Resolver.Email ?? string.Empty))
                 return NotFound("Employee email not found");
-            
+
             var employeeSubjectReplacements = new Dictionary<string, string>
             {
-                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
             };
             var employeeBodyReplacements = new Dictionary<string, string>
             {
             };
-            await _emailService.SendEmailNotification(EmailTemplateType.TicketReopenedResolver,res!.Resolver.Email, customerSubjectReplacements, customerBodyReplacements, _: _);
-            
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketReopenedResolver, res!.Resolver.Email,
+                customerSubjectReplacements, customerBodyReplacements, _: _);
+
             //end of send email employee
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -344,7 +367,8 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
+            return BadRequest(
+                $"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 
@@ -383,17 +407,24 @@ public class CustomerTicketController : ControllerBase
             var validationToken = _authorizationService.IssueTemporaryToken(7, _);
             var subjectReplacements = new Dictionary<string, string>
             {
-                {"TicketId", res?.TicketId.ToString() ?? string.Empty}
+                { "TicketId", res?.TicketId.ToString() ?? string.Empty }
             };
             var bodyReplacements = new Dictionary<string, string>
             {
                 { "CreatedAt", $"{ticket.CreatedAt:D} " },
                 { "TicketId", ticket.TicketId.ToString() },
                 { "CustomerFullName", ticket.Requestor.Name },
-                { "CreateTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CreateTicketBaseUrl}?customerId={ticket.Requestor.CustomerId}&validationToken={validationToken.Token}" },
-                { "ViewTicketUrl", $"{AppSettings.Instance.ClientConfiguration.CloseTicketBaseUrl}?ticketId={ticket.TicketId}&validationToken={validationToken.Token}"},
+                {
+                    "CreateTicketUrl",
+                    $"{AppSettings.Instance.ClientConfiguration.CreateTicketBaseUrl}?customerId={ticket.Requestor.CustomerId}&validationToken={validationToken.Token}"
+                },
+                {
+                    "ViewTicketUrl",
+                    $"{AppSettings.Instance.ClientConfiguration.CloseTicketBaseUrl}?ticketId={ticket.TicketId}&validationToken={validationToken.Token}"
+                },
             };
-            await _emailService.SendEmailNotification(EmailTemplateType.TicketClosed,res!.Requestor.Email, subjectReplacements, bodyReplacements, _: _);
+            await _emailService.SendEmailNotification(EmailTemplateType.TicketClosed, res!.Requestor.Email,
+                subjectReplacements, bodyReplacements, _: _);
             //end of send email customer
 
             var result = _mapper.Map<CustomerTicketResponse>(res);
@@ -401,7 +432,8 @@ public class CustomerTicketController : ControllerBase
         }
         catch (Exception e)
         {
-            return BadRequest($"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
+            return BadRequest(
+                $"Unexpected error occured.{e.Message}.{AppSettings.Instance.Smtp.Email}.{AppSettings.Instance.Smtp.From}");
         }
     }
 }
