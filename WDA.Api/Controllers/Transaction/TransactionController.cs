@@ -41,11 +41,11 @@ public class TransactionController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IQueryable<TransactionResponse>> GetTransactions(CancellationToken _)
+    public ActionResult<IQueryable<TransactionResponse>> GetTransactions(int page = 0, int size = 10, CancellationToken _ = default)
     {
-        var customers = _unitOfWork.TransactionRepository.Get(x => !x.IsDelete).Include(x => x.Customer)
+        var transactions = _unitOfWork.TransactionRepository.Get(x => !x.IsDelete, size, page).Include(x => x.Customer)
             .Select(x => _mapper.Map<TransactionResponse>(x));
-        return Ok(customers);
+        return Ok(transactions);
     }
 
     [HttpPost]
