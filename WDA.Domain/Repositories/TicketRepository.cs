@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using WDA.Domain.Enums;
 using WDA.Domain.Models.Ticket;
 using WDA.Domain.Models.User;
 using WDA.Shared;
@@ -87,5 +88,28 @@ public class TicketRepository
         ticket.LastModified = DateTimeOffset.UtcNow;
         var res = _dbContext.EmployeeTickets.Update(ticket);
         return res.Entity;
+    }
+
+    public async Task CloseTicketsAfter3Days()
+    {
+        var customerTickets = await _dbContext.CustomerTickets
+            .Where(x => x.Status == TicketStatus.Done && x.LastModified.AddDays(3) <= DateTimeOffset.UtcNow)
+            .ToListAsync();
+        var employeeTickets = await _dbContext.EmployeeTickets
+            .Where(x => x.Status == TicketStatus.Done && x.LastModified.AddDays(3) <= DateTimeOffset.UtcNow)
+            .ToListAsync();
+        foreach (var ticket in customerTickets)
+        {
+            ticket.Status = TicketStatus.Closed;
+            _dbContext.CustomerTickets.Update(ticket);
+        }
+
+        foreach (var ticket in employeeTickets)
+        {
+            ticket.Status = TicketStatus.Closed;
+            _dbContext.EmployeeTickets.Update(ticket);
+        }
+
+        await _dbContext.SaveChangesAsync();
     }
 }

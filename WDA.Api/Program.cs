@@ -65,9 +65,8 @@ public class Program
             Credentials = new NetworkCredential(AppSettings.Instance.Smtp.Email, AppSettings.Instance.Smtp.Password)
         });
         builder.Services.AddScoped<IEmailService, EmailService>();
+        builder.Services.AddScoped<TicketRepository>();
         builder.Services.AddHangfire();
-        Configurations.Hangfire.RegisterRecurringJob();
-
         //
         builder.Services.AddSingleton<JwtSecurityTokenHandler>();
         builder.Services.AddControllers()
@@ -136,6 +135,7 @@ public class Program
             Authorization = new[] { new HangfireDashboardAuthorizationFilter() },
             IsReadOnlyFunc = _ => false
         });
+        Configurations.Hangfire.RegisterRecurringJob();
         //config get file name in header
         app.Use(async (context, next) =>
         {
