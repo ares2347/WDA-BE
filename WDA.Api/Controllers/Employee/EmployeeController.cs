@@ -32,19 +32,18 @@ public class EmployeeController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserInfoResponse>>> GetEmployees(CancellationToken _)
     {
-        var employees = await _userManager.GetUsersInRoleAsync(RoleName.Hr);
-        var managers = await _userManager.GetUsersInRoleAsync(RoleName.Sale);
-        foreach (var employee in employees)
+        var hr = await _userManager.GetUsersInRoleAsync(RoleName.Hr);
+        var hrManager = await _userManager.GetUsersInRoleAsync(RoleName.HrManager);
+        var sale = await _userManager.GetUsersInRoleAsync(RoleName.Sale);
+        var saleManager = await _userManager.GetUsersInRoleAsync(RoleName.SaleManager);
+        var users = hr.Concat(hrManager).Concat(sale).Concat(saleManager);
+        var enumerable = users.ToList();
+        foreach (var user in enumerable)
         {
-            employee.Roles = (await _userManager.GetRolesAsync(employee)).ToList();
+            user.Roles = (await _userManager.GetRolesAsync(user)).ToList();
         }        
-        foreach (var manager in managers)
-        {
-            manager.Roles = (await _userManager.GetRolesAsync(manager)).ToList();
-        }
-        var employeeResponse = employees.Select( employee => _mapper.Map<UserInfoResponse>(employee)).AsEnumerable();
-        var managerResponse = managers.Select( manager => _mapper.Map<UserInfoResponse>(manager)).AsEnumerable();
-        var response = employeeResponse.Concat(managerResponse);
+
+        var response = enumerable.Select( employee => _mapper.Map<UserInfoResponse>(employee)).AsEnumerable();
         return Ok(response);
     }
 
